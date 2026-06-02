@@ -1,8 +1,8 @@
-# Part 2.2 — Async
+# Section 2.2 — Async
 
 New methods: `async`, `tryPromise`.
 
-Part 1 built a loop that runs a tree of nodes. But every node finished instantly. Real programs
+Section 2.1 built a loop that runs a tree of nodes. But every node finished instantly. Real programs
 wait — on a network call, a timer, a file. This part adds the one node that can take time, and the
 one trick that makes it work: the loop can stop, and start again later.
 
@@ -99,7 +99,7 @@ it's just written for you. You hand over `() => fetch(...)` and never see `resum
 
 ## Why running now returns a Promise
 
-In Part 1, `runSyncExit` walked the tree and handed back the answer immediately, because every node
+In Section 2.1, `runSyncExit` walked the tree and handed back the answer immediately, because every node
 finished at once. Now a node can pause. So the runner can't always have an answer when you call it —
 it might be parked, waiting. That's why the main runner is now `runPromise`: it gives you a Promise up
 front and resolves it from inside `resume`, whenever that fires.
@@ -129,7 +129,7 @@ are the same `Effect`.
 
 `async` is `OP_ASYNC` in `repos/effect/packages/effect/src/internal/core.ts`. The real version is the
 same shape, with two additions we'll get to: the register also receives an `AbortSignal`, and it can
-return a *canceler* — both used for interruption in Part 5. The real `tryPromise`
+return a *canceler* — both used for interruption in Section 2.5. The real `tryPromise`
 (`core-effect.ts`) is `core.async(resume => { evaluate().then(a => resume(succeed(a)), e => resume(fail(...))) })` —
 the same `.then` dance we wrote.
 

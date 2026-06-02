@@ -2,14 +2,20 @@
 
 ## The one-line answer
 
-Effect is a TypeScript library for building programs where the things that usually stay hidden —
-how a function can fail, what it depends on, whether it's async — are written down in the type and
-handled in one place.
+Effect is a TypeScript library for building complex applications that stay readable and reliable as
+they grow.
 
-The official docs put the core idea like this: *use the type system to track errors and context,
-not just success values.* That sentence is the whole pitch. A normal function's type tells you what
-it returns when everything goes right. Effect's type tells you that, plus how it can go wrong, plus
-what it needs to run.
+It does that with one core idea, which the official docs put like this: *use the type system to track
+errors and context, not just success values.* A normal function's type tells you what it returns when
+everything goes right. Effect's type tells you that, plus how it can go wrong, plus what it needs to
+run.
+
+Those last two — how it fails, what it needs — are things a normal type leaves out, so they turn into
+surprises: an exception you didn't know could happen, a dependency you forgot to wire up. (Async is a
+different story. It *is* in the type — `Promise<string>` says "async" loud and clear — but that's its
+own problem: the announcement spreads to every caller. We get to that as Problem 3.) Effect's job is
+to put the failures and the dependencies into the type too, and to stop the async announcement from
+spreading — so all three stay under control as the program gets bigger.
 
 That type is:
 
@@ -148,6 +154,23 @@ function handleGetProfile(db: Db, id: string)      // same — just forwards it
 `getProfile` and `handleGetProfile` have no business knowing about a database, but they both carry
 `db` just to pass it down. And to test `getProfile`, you have to build a fake `Db` and thread it in
 by hand. The dependency is tangled into every call.
+
+**"Why not just import the `db` in the repository, where it's actually used?"** It's the obvious
+question, and for a toy like this you could. Two reasons it doesn't hold up:
+
+1. A function that reaches out to an imported `db` takes a hidden input. Its type says
+   `(id: string) => User`, but it really depends on a module-level thing you can't see in the
+   signature. That's harder to reason about, and harder to test — to swap the database for a fake,
+   you now have to mock the *module*, not just pass a different argument. A function whose inputs are
+   all explicit is the clean one: you read its signature and you know everything it touches.
+2. A single imported `db` assumes one global database client for the whole process. Real apps often
+   can't make that assumption. The client is frequently built **per request** — it carries the
+   logged-in user's identity so the database can enforce row-level security (each request only sees
+   its own rows). There's no one `db` to import; there's a different one for every request. So you
+   need a way to supply it at the point you run the program, not hard-code it at the top of a file.
+
+Both point at the same fix: make the dependency something the program *asks for* and you *supply from
+the outside*, per run. That's exactly what Effect does.
 
 Now the Effect version:
 

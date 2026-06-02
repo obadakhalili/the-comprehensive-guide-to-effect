@@ -1,4 +1,4 @@
-# Part 2.6 — Ergonomics (pipe + dual)
+# Section 2.6 — Ergonomics (pipe + dual)
 
 New: `pipe` and `dual`.
 
@@ -110,11 +110,11 @@ not a claim — it's something you built:
 
 - An Effect is a **tree of tagged nodes** (`succeed`, `flatMap`, `async`, `service`, ...).
 - A **fiber** is a loop with registers and a stack that walks the tree.
-- **Sequencing** is a stack of postponed steps. **Failure** is a flag that skips the success steps
-  until a handler. **Async** is the loop stepping out and back in. **Dependencies** are a context
-  register. **Concurrency** is more than one fiber. **Everything fancy** — `map`, `tap`, `retry`,
-  `timeout`, `catchTags`, `forEachConcurrent` — is built from the same handful of primitives.
+- **Sequencing** is a stack of postponed steps. **Failure** is a flag that throws away the success
+  steps until it reaches a handler. **Async** is the loop returning out of itself and being called
+  again later. **Dependencies** are a context register. **Concurrency** is more than one fiber.
+  **Everything fancy** — `map`, `tap`, `retry`, `timeout`, `catchTags`, `forEachConcurrent` — is built
+  from the same handful of primitives.
 - And **pipe/dual** are sugar on top, gone before anything runs.
 
-That's Effect. Not magic — mechanics. The reference implementation that roughly matches where Part 6
-lands is `toy-runtime-provide.ts` at the repo root.
+That's Effect. Not magic — mechanics.

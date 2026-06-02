@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 1: foundations.
+// A toy Effect — Section 2.1: foundations.
 //
 // Methods: succeed, fail, sync, flatMap, map, tap.
 // The whole idea in one file: an Effect is a data structure, and a loop runs it.

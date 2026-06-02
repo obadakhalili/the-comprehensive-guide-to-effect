@@ -1,5 +1,5 @@
 // =================================================================
-// Part 1 example. Run: bun tutorial/02-under-the-hood/01-foundations/example.ts
+// Section 2.1 example. Run: bun tutorial/02-under-the-hood/01-foundations/example.ts
 // =================================================================
 
 import { succeed, fail, sync, flatMap, map, tap, runSyncExit, type Effect } from "./runtime"

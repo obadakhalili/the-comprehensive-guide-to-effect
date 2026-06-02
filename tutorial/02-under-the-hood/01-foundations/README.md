@@ -1,4 +1,4 @@
-# Part 2.1 — Foundations
+# Section 2.1 — Foundations
 
 Methods: `succeed`, `fail`, `sync`, `flatMap`, `map`, `tap`.
 
@@ -69,7 +69,7 @@ you build the description; `sync(() => Date.now())` captures it when the descrip
 
 ## flatMap: the one that needs a stack
 
-`flatMap` is "do this, then do the next thing with the result":
+`flatMap` is "run an effect, then use its result to build the next effect":
 
 ```ts
 flatMap(succeed(10), (n) => succeed(n * 2))
@@ -171,7 +171,7 @@ is empty and we finish as a `Failure`. That's why the `map` never ran — its `f
 and the failure popped right past it.
 
 This is `try/catch` rebuilt from a flag and a stack. There's nothing to catch the failure yet — that's
-`catchAll`, in Part 4. For now a failure just unwinds everything.
+`catchAll`, in Section 2.4. For now a failure just unwinds everything.
 
 ## Where this maps in real Effect
 
@@ -184,7 +184,7 @@ ability to pause — which is the next part.
 
 One honest simplification: when our `Sync` thunk throws, we stuff the thrown thing into the `failure`
 register. Real Effect treats an unexpected `throw` as a *defect* (a separate channel from typed
-failures). We'll meet that distinction in Part 4. For now, a throw just fails.
+failures). We'll meet that distinction in Section 2.4. For now, a throw just fails.
 
 Next: [`02-async/`](../02-async/) — how the loop pauses on a promise and picks back up, with no
 `await` anywhere in your code.

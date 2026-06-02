@@ -1,5 +1,5 @@
 // =================================================================
-// Part 6 example. Run: bun tutorial/02-under-the-hood/06-ergonomics/example.ts
+// Section 2.6 example. Run: bun tutorial/02-under-the-hood/06-ergonomics/example.ts
 // =================================================================
 
 import {

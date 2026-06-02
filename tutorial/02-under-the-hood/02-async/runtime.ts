@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 2: async.
+// A toy Effect — Section 2.2: async.
 //
 // New methods: async, tryPromise.
 // New idea: a node can take time. The loop pauses on it and resumes later.
@@ -87,7 +87,7 @@ type Frame = (a: unknown) => Effect<unknown, unknown>
 
 // the core engine. drives the loop and calls `onExit` when finished. on an Async
 // node it returns early (parks); `resume` re-enters the loop later. note this is
-// the SAME loop as Part 1 — we only added the Async case and the park/resume.
+// the SAME loop as Section 2.1 — we only added the Async case and the park/resume.
 const unsafeRun = <A, E>(effect: Effect<A, E>, onExit: (exit: Exit<A, E>) => void): void => {
   let current: Primitive | null = toPrimitive(effect as Effect<unknown, unknown>)
   const stack: Frame[] = []

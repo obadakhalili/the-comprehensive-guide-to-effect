@@ -37,24 +37,21 @@ These files use the real `effect` library.
 
 ## Part 2 — How it works under the hood
 
-[`02-under-the-hood/`](./02-under-the-hood/) — the *how*. We build our own tiny Effect. Each part is
-a folder you can run, and each one extends the previous:
+[`02-under-the-hood/`](./02-under-the-hood/) — the *how*. We build our own tiny Effect. Part 2 is six
+**sections**, numbered 2.1 to 2.6. Each is a folder you can run, and each one extends the previous:
 
-1. [`01-foundations/`](./02-under-the-hood/01-foundations/) — `succeed`, `fail`, `sync`, `flatMap`,
-   `map`, `tap`. The core idea: an Effect is data, and a loop runs it.
-2. [`02-async/`](./02-under-the-hood/02-async/) — `async`, `tryPromise`. How a loop pauses on a
-   promise and picks back up.
-3. [`03-context/`](./02-under-the-hood/03-context/) — `service`, `provide`. Dependencies as data,
-   and where the `R` type parameter comes from.
-4. [`04-errors/`](./02-under-the-hood/04-errors/) — `catchAll`, `catchTags`, `retry`. How failure
-   short-circuits and how handlers catch it.
-5. [`05-concurrency/`](./02-under-the-hood/05-concurrency/) — `fork`, `raceFirst`,
-   `forEachConcurrent`. Running more than one thing at once, and cancelling.
-6. [`06-ergonomics/`](./02-under-the-hood/06-ergonomics/) — `pipe`, `dual`. The sugar that makes
-   the API read top-to-bottom instead of inside-out.
+- **2.1** [`01-foundations/`](./02-under-the-hood/01-foundations/) — `succeed`, `fail`, `sync`,
+  `flatMap`, `map`, `tap`. The core idea: an Effect is data, and a loop runs it.
+- **2.2** [`02-async/`](./02-under-the-hood/02-async/) — `async`, `tryPromise`. How a loop pauses on a
+  promise and picks back up.
+- **2.3** [`03-context/`](./02-under-the-hood/03-context/) — `service`, `provide`. Dependencies as
+  data, and where the `R` type parameter comes from.
+- **2.4** [`04-errors/`](./02-under-the-hood/04-errors/) — `catchAll`, `catchTags`, `retry`. How
+  failure short-circuits and how handlers catch it.
+- **2.5** [`05-concurrency/`](./02-under-the-hood/05-concurrency/) — `fork`, `raceFirst`,
+  `forEachConcurrent`. Running more than one thing at once, and cancelling.
+- **2.6** [`06-ergonomics/`](./02-under-the-hood/06-ergonomics/) — `pipe`, `dual`. The sugar that
+  makes the API read top-to-bottom instead of inside-out.
 
 Every claim about how the real library works is checked against the Effect source in
 [`repos/effect`](../repos/effect). Where our toy simplifies something, the README says so.
-
-The file `toy-runtime-provide.ts` at the repo root is the finished reference — roughly where part 6
-lands.

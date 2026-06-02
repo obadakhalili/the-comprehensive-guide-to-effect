@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 5: concurrency.
+// A toy Effect — Section 2.5: concurrency.
 //
 // New methods: fork, raceFirst, forEachConcurrent (plus sleep, timeout).
 // New idea: more than one walk of the tree at the same time. Each walk is a

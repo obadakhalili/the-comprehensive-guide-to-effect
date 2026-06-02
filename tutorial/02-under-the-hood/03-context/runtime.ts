@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 3: context (dependencies).
+// A toy Effect — Section 2.3: context (dependencies).
 //
 // New: a third type parameter R (Requirements), a `Tag` to name a dependency,
 // and `service` / `provide` to read and supply one.

@@ -1,4 +1,4 @@
-# Part 2.4 — Error handling
+# Section 2.4 — Error handling
 
 New methods: `catchAll`, `catchTags`, `retry`.
 
@@ -110,17 +110,23 @@ dispatching, so an error without a `_tag` simply passes through uncaught. `retry
 more general (it takes a `Schedule` value describing the retry policy — delays, backoff, limits) but at
 its core it's the same recover-and-rerun loop.
 
-Two honest simplifications worth knowing:
+One design note (this is *not* a simplification — real Effect does it the same way) and one honest
+simplification:
 
-1. **Exit is one-or-the-other.** Notice `Exit` is a tagged union: `Success` with a value, or `Failure`
-   with an error — never both. That's deliberate; it makes "succeeded but also has an error" impossible
-   to represent.
-2. **We collapse the `Cause`.** Real Effect doesn't put your raw error in the failure slot — it wraps
-   it in a `Cause`, a small tagged structure that distinguishes a normal typed failure (`Fail`) from a
-   *defect* (`Die` — an unexpected `throw`, like a bug) from an interruption (`Interrupt`). `catchAll`
-   in real Effect catches only `Fail`, not `Die`. Our toy has a single error slot, so when a `Sync`
-   thunk throws, we treat it as an ordinary failure and `catchAll` would catch it — real Effect would
-   not. The `Cause` layer is what we traded away for simplicity.
+1. **Exit is one-or-the-other, on purpose.** Notice `Exit` is a tagged union: `Success` with a value,
+   or `Failure` with an error — never both, never neither. We could have used a flat object with an
+   `ok` flag plus both a `value` and an `error` field, but then "succeeded but also carries an error"
+   would be representable, and every reader would have to remember which field is the real one. The
+   tagged union makes that illegal state impossible: if it's a `Success`, there is no error field to
+   misread. Real Effect's `Exit` is exactly this shape — `Success | Failure` — so this isn't a corner
+   we cut; it's the same decision, called out because making illegal states unrepresentable is a move
+   Effect leans on everywhere.
+2. **We collapse the `Cause`.** This one *is* a simplification. Real Effect doesn't put your raw error
+   in the failure slot — it wraps it in a `Cause`, a small tagged structure that distinguishes a
+   normal typed failure (`Fail`) from a *defect* (`Die` — an unexpected `throw`, like a bug) from an
+   interruption (`Interrupt`). `catchAll` in real Effect catches only `Fail`, not `Die`. Our toy has a
+   single error slot, so when a `Sync` thunk throws, we treat it as an ordinary failure and `catchAll`
+   would catch it — real Effect would not. The `Cause` layer is what we traded away for simplicity.
 
 Next: [`05-concurrency/`](../05-concurrency/) — `fork`, `raceFirst`, `forEachConcurrent`. Running more
 than one of these loops at once, and cancelling the losers.

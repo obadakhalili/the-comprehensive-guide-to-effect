@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 4: error handling.
+// A toy Effect — Section 2.4: error handling.
 //
 // New methods: catchAll, catchTags, retry.
 // New node: OnFailure. So far a failure unwinds everything; now a frame can

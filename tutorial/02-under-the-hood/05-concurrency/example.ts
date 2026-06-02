@@ -1,5 +1,5 @@
 // =================================================================
-// Part 5 example. Run: bun tutorial/02-under-the-hood/05-concurrency/example.ts
+// Section 2.5 example. Run: bun tutorial/02-under-the-hood/05-concurrency/example.ts
 // =================================================================
 
 import { fail, map, flatMap, sleep, raceFirst, forEachConcurrent, timeout, runPromise, runPromiseExit } from "./runtime"

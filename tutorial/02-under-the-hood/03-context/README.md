@@ -1,4 +1,4 @@
-# Part 2.3 — Context (dependencies)
+# Section 2.3 — Context (dependencies)
 
 New: a third type parameter `R`, a `Tag`, and `service` / `provide`.
 

@@ -1,5 +1,5 @@
 // =================================================================
-// Part 3 example. Run: bun tutorial/02-under-the-hood/03-context/example.ts
+// Section 2.3 example. Run: bun tutorial/02-under-the-hood/03-context/example.ts
 // =================================================================
 
 import { makeTag, service, provide, succeed, flatMap, map, runSync, type Effect } from "./runtime"

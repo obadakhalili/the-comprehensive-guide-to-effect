@@ -1,8 +1,8 @@
 // =================================================================
-// Part 2 example. Run: bun tutorial/02-under-the-hood/02-async/example.ts
+// Section 2.2 example. Run: bun tutorial/02-under-the-hood/02-async/example.ts
 // =================================================================
 
-import { succeed, flatMap, map, tryPromise, runPromise, runPromiseExit, runSyncExit } from "./runtime"
+import { succeed, map, tryPromise, runPromise, runPromiseExit, runSyncExit } from "./runtime"
 
 // a fake async fetch: a Promise that resolves after 50ms.
 const fetchName = (id: string) =>
@@ -11,9 +11,9 @@ const fetchName = (id: string) =>
     catch: (error) => `fetch failed: ${String(error)}`,
   })
 
-// a program that mixes an ASYNC step (fetchName) and SYNC steps (map). notice:
+// a program that mixes an ASYNC step (fetchName) and a SYNC step (map). notice:
 // no `await`, no `async` anywhere in how we build it. it's still just data.
-const program = flatMap(fetchName("1"), (name) => map(succeed(name), (n) => n.toUpperCase()))
+const program = map(fetchName("1"), (name) => name.toUpperCase())
 
 async function main() {
   console.log("1) a fully sync effect runs synchronously:")

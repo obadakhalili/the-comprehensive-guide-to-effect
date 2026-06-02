@@ -1,5 +1,5 @@
 // =================================================================
-// A toy Effect — Part 6: ergonomics (pipe + dual).
+// A toy Effect — Section 2.6: ergonomics (pipe + dual).
 //
 // No new runtime behavior. This part is pure source-level sugar: `pipe` to read
 // chains top-to-bottom, and `dual` so each combinator works both standalone
@@ -255,7 +255,7 @@ export const catchTags = <
     R | ContextOf<ReturnType<NonNullable<H[keyof H]>>>
   >
 
-// ---------- runtime (unchanged from Part 5) ----------
+// ---------- runtime (unchanged from Section 2.5) ----------
 type Frame =
   | { readonly _op: "OnSuccess"; readonly f: (a: unknown) => Effect<unknown, unknown, unknown> }
   | { readonly _op: "OnFailure"; readonly g: (e: unknown) => Effect<unknown, unknown, unknown> }

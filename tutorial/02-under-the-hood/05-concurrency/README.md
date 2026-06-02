@@ -1,4 +1,4 @@
-# Part 2.5 — Concurrency
+# Section 2.5 — Concurrency
 
 New methods: `fork`, `raceFirst`, `forEachConcurrent` (plus `sleep`, `timeout`).
 
@@ -15,7 +15,7 @@ The example proves it: three 50ms tasks finish in ~50ms, not 150ms. They ran at 
 
 ## The refactor: a Fiber is the bundle of state
 
-Up to Part 4, the runtime kept its state — `current`, `stack`, `value`, `failure`, `context` — in
+Up to Section 2.4, the runtime kept its state — `current`, `stack`, `value`, `failure`, `context` — in
 local variables inside `unsafeRun`. To run more than one walk at a time, that state has to be a thing
 you can have many of. So it moves into a class:
 
@@ -24,7 +24,7 @@ class FiberRuntime {
   current; stack; value; failure; inFailure; context  // the same registers as before
   done; exitValue; observers                            // how it reports its result
   suspended; canceler                                   // for pausing and interruption
-  step() { /* the exact same loop from Part 4 */ }
+  step() { /* the exact same loop from Section 2.4 */ }
 }
 ```
 
@@ -52,7 +52,7 @@ you're holding a `Fiber` you can wait on later, while its work runs in the backg
 
 `fork` alone just starts something. Everything useful is **fork + wait**, and the waiting is done with
 an `Async` node that registers an observer on the fiber. That's the key connection: a fiber finishing
-is an async event, so we wait for it with the same `async`/`resume` machinery from Part 2.
+is an async event, so we wait for it with the same `async`/`resume` machinery from Section 2.2.
 
 ## raceFirst: fork both, take the first, interrupt the loser
 
@@ -106,7 +106,7 @@ fails — example step 4. That's why step 1 ran in ~50ms: all three were forked 
 
 ## Interruption: the canceler earns its keep
 
-Back in Part 2, `async`'s register could return a value we ignored. Now it returns a **canceler** —
+Back in Section 2.2, `async`'s register could return a value we ignored. Now it returns a **canceler** —
 how to abort the work it started. `sleep` uses it:
 
 ```ts
@@ -134,6 +134,18 @@ the loser is sleeping; interrupting it calls `clearTimeout`, killing the pending
 canceler, that timer would still fire later and keep the process alive even though the answer is
 already in. So the canceler isn't decoration — it's what makes "stop the work you no longer need" real
 instead of just ignoring a result.
+
+So `interrupt` just calls whatever canceler the `async` handed back, and the canceler is whatever
+that particular work needs to stop. `sleep` returns `() => clearTimeout(timer)`. A real fetch would
+return `() => controller.abort()`. The runtime doesn't know or care which — it only knows "to cancel,
+call this function." That's the part that generalizes past `sleep`: the work itself supplies the way
+to stop it.
+
+This is exactly what an `AbortSignal` is for, and it's the one piece our toy hand-waves. Real Effect
+hands the register an `AbortSignal` along with `resume`. So instead of inventing your own canceler,
+you pass that signal straight into the work — `fetch(url, { signal })` — and the work aborts itself
+when the signal fires. Same mechanism, one standard channel: our return-a-canceler is the toy version
+of real Effect's give-you-a-signal.
 
 (Our interruption is best-effort: a fiber that hasn't suspended yet — still sitting in the microtask
 queue — can't be stopped. Real Effect handles that case with interruption flags; we skipped it.)
