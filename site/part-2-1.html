@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2.1 Foundations — an Effect is data, a loop runs it · The Effect Guide</title>
+<meta name="description" content="Build the core of an Effect runtime: constructors (succeed, fail, sync), sequencing with flatMap, map and tap derived from it, and the interpreter loop with registers and a continuation stack. Includes an interactive step-by-step trace." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2-1.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="2.1 Foundations — an Effect is data, a loop runs it" />
+<meta property="og:description" content="Constructors, sequencing, and the interpreter loop — with an interactive trace." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2-1.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.1 Foundations</p>
+    <div class="secpills">
+      <a class="active" href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a href="part-2-6.html">2.6</a>
+    </div>
+
+    <p class="eyebrow" style="margin-top:1.4em">Section 2.1</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(34px,5vw,48px);line-height:1.1;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">Foundations</h1>
+    <p class="lead">An Effect is data, and a loop runs it. We build the description and the loop that
+      walks it. Everything later is just more node types and a slightly bigger loop.</p>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: succeed · fail · sync · flatMap · map · tap</p>
+
+    <h2>Why this exists: separate describing from doing</h2>
+    <p>A normal function does its work the moment you call it. That's the problem — once it has run,
+      the work is over. You can't retry it, time it, or look at it. It's gone.</p>
+    <p>So the first move is to stop <em>doing</em> and start <em>describing</em>. Instead of a function
+      that runs, we make a value that says what <em>would</em> run. Then a separate thing — the runtime
+      — takes that value and carries it out later, when we ask. Describing and doing become two steps
+      instead of one.</p>
+
+    <h2>What an Effect actually is</h2>
+    <p>Two halves, worth keeping apart. The <strong>public type</strong> is opaque — it carries only
+      <code>A</code> (the value on success) and <code>E</code> (how it can fail), and is deliberately
+      empty of detail so inference stays clean. The <strong>internal value</strong> is a plain tagged
+      object, a <code>Primitive</code>:</p>
+
+    <pre><code class="language-typescript">type Primitive =
+  | { _op: "Succeed";   value: unknown }
+  | { _op: "Failure";   error: unknown }
+  | { _op: "Sync";      thunk: () =&gt; unknown }
+  | { _op: "OnSuccess"; self: Effect; f: (a) =&gt; Effect }</code></pre>
+
+    <p>Each constructor builds one of these and casts it to <code>Effect&lt;A, E&gt;</code>. The runtime
+      casts back and reads <code>_op</code>. Same object, two faces: an <code>Effect&lt;number&gt;</code>
+      to you, a <code>{ _op: "Succeed" }</code> to the loop. The surface is typed; the core uses casts.
+      Real Effect is built exactly this way.</p>
+
+    <h2>The constructors</h2>
+    <p><code>succeed</code>, <code>fail</code>, and <code>sync</code> are the leaves — they don't wrap
+      other effects:</p>
+    <pre><code class="language-typescript">succeed(10)            // { _op: "Succeed", value: 10 }
+fail("boom")           // { _op: "Failure", error: "boom" }
+sync(() =&gt; Date.now()) // { _op: "Sync", thunk: () =&gt; Date.now() }</code></pre>
+    <p><code>succeed</code> and <code>fail</code> hold a value that's ready now. <code>sync</code> holds
+      a <em>thunk</em> — a function the runtime runs when it reaches that node. The difference is
+      timing: <code>succeed(Date.now())</code> captures the time you <em>build</em> the description;
+      <code>sync(() =&gt; Date.now())</code> captures it when the description <em>runs</em>.</p>
+
+    <h2>flatMap: the one that needs a stack</h2>
+    <p><code>flatMap</code> is "run an effect, then use its result to build the next effect":</p>
+    <pre><code class="language-typescript">flatMap(succeed(10), (n) =&gt; succeed(n * 2))</code></pre>
+    <p>It builds an <code>OnSuccess</code> node holding <code>self</code> (the first effect) and
+      <code>f</code> (what to do with its value). Here's the catch: to run <code>f</code> the loop needs
+      the value of <code>self</code>, and <code>self</code> hasn't run yet. So <code>f</code> can't run
+      now — it has to be set aside until <code>self</code> produces a value.</p>
+    <p>"Set aside" is a stack:</p>
+    <pre><code class="language-typescript">case "OnSuccess":
+  stack.push(node.f)                // postpone f
+  current = toPrimitive(node.self)  // run the child first
+  continue</code></pre>
+    <div class="callout key">
+      <span class="tag">The stack, in one line</span>
+      <p style="margin:0">That's the only reason the stack exists: <strong>to hold the <code>f</code> of
+        a step whose input isn't ready yet.</strong></p>
+    </div>
+
+    <h2>map and tap are just flatMap</h2>
+    <p>Neither is a primitive — there's no <code>Map</code> or <code>Tap</code> node. Both are built
+      from <code>flatMap</code>:</p>
+    <pre><code class="language-typescript">map(self, f)  = flatMap(self, (a) =&gt; sync(() =&gt; f(a)))   // wrap the plain result back into an effect
+tap(self, f)  = flatMap(self, (a) =&gt; map(f(a), () =&gt; a)) // run f(a), then ignore it and keep a</code></pre>
+    <p>So the rule you'll use constantly:</p>
+    <pre><code class="language-typescript">map(self,     a =&gt; plainValue)  // your function returns a value
+flatMap(self, a =&gt; anEffect)    // your function returns the next effect
+tap(self,     a =&gt; anEffect)    // run an effect, keep the original value</code></pre>
+
+    <h2>The runtime: registers and a loop</h2>
+    <p>The runner is the whole engine. It holds a handful of registers:</p>
+    <ul>
+      <li><code>current</code> — the node it's about to run.</li>
+      <li><code>value</code> / <code>failure</code> — the result of the last node.</li>
+      <li><code>inFailure</code> — which one is live: are we carrying a value, or an error?</li>
+      <li><code>stack</code> — the postponed <code>f</code>s.</li>
+    </ul>
+    <p>And it loops over two halves: <strong>dive</strong> into a node, or <strong>unwind</strong> by
+      popping a postponed step. Watch it run a real program — <code>succeed(10)</code>, doubled, plus
+      one, with a tap. Step through it:</p>
+
+    <div class="stepper" data-stepper>
+      <script type="application/json">
+      {
+        "title": "tracing succeed(10) · ×2 · +1 · tap",
+        "steps": [
+          { "desc": "We begin with the entire program sitting in <span class='hl'>current</span>. Nothing has run — the stack is empty, no value yet.", "current": "OnSuccess (tap)", "register": "—", "stack": [] },
+          { "desc": "Hit an <span class='hl'>OnSuccess</span>. Its <span class='hl'>f</span> needs the child's value, which doesn't exist yet — so postpone <span class='hl'>f</span> by pushing it, and dive into the child.", "current": "OnSuccess (+1)", "register": "—", "stack": ["f3 · tap"] },
+          { "desc": "Another OnSuccess. Same move: push its <span class='hl'>f</span>, dive deeper.", "current": "OnSuccess (×2)", "register": "—", "stack": ["f3 · tap", "f2 · +1"] },
+          { "desc": "And one more. Push, dive. The stack now holds three postponed steps, waiting for a value to come back up.", "current": "Succeed(10)", "register": "—", "stack": ["f3 · tap", "f2 · +1", "f1 · ×2"] },
+          { "desc": "Hit a <span class='hl'>Succeed</span> leaf. Write its value into the register. Now we stop diving and start unwinding.", "current": "Succeed(10)", "register": "10", "stack": ["f3 · tap", "f2 · +1", "f1 · ×2"] },
+          { "desc": "Pop the top step, <span class='hl'>f1</span>. We're carrying a value, so run it: <span class='hl'>f1(10)</span> builds <span class='hl'>succeed(20)</span>.", "current": "Succeed(20)", "register": "10", "stack": ["f3 · tap", "f2 · +1"] },
+          { "desc": "Run that node — the register becomes <span class='hl'>20</span>.", "current": "Succeed(20)", "register": "20", "stack": ["f3 · tap", "f2 · +1"] },
+          { "desc": "Pop <span class='hl'>f2</span>, the +1 step. It builds a <span class='hl'>sync(() =&gt; 21)</span>; running it makes the register <span class='hl'>21</span>.", "current": "Sync (+1)", "register": "21", "stack": ["f3 · tap"] },
+          { "desc": "Pop <span class='hl'>f3</span>, the tap. It logs <span class='hl'>tap sees: 21</span> and keeps the value unchanged.", "current": "tap", "register": "21", "stack": [] },
+          { "desc": "Stack empty, nothing left in <span class='hl'>current</span>. Done — the program is a <span class='hl'>Success(21)</span>.", "current": "— done —", "register": "21", "stack": [] }
+        ]
+      }
+      </script>
+    </div>
+
+    <p>The loop alternates the whole way: dive, dive, dive to a leaf, then unwind through each
+      postponed <code>f</code>. The stack fills as it dives into the chain, then drains as the value
+      bubbles back up.</p>
+
+    <h2>Failure is the same loop, one check different</h2>
+    <p>When the loop hits a <code>Failure</code> node, it writes the <code>failure</code> register and
+      sets <code>inFailure = true</code>. The unwinding half then does one thing differently:</p>
+    <pre><code class="language-typescript">let frame = stack.pop()
+while (frame) {
+  if (!inFailure) { current = frame(value); break } // value → run the step
+  frame = stack.pop()                               // failure → discard the step
+}</code></pre>
+    <p>A value runs the next postponed step. A failure <strong>discards</strong> it and keeps popping.
+      So once we're failing, every postponed step on the happy path gets thrown away, one after
+      another, until the stack is empty and we finish as a <code>Failure</code>.</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 700 130" role="img" aria-label="A failure pops past every success step until the stack is empty">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <text x="20" y="30" class="m" font-size="13" fill="#b14d3c" font-weight="700">Failure("boom")</text>
+          <g class="m" font-size="12.5">
+            <rect x="170" y="14" width="90" height="30" rx="7" fill="#f3ece0" stroke="#bcae9a"/><text x="215" y="34" text-anchor="middle" fill="#8a7f6f">f · map</text>
+            <rect x="280" y="14" width="90" height="30" rx="7" fill="#f3ece0" stroke="#bcae9a"/><text x="325" y="34" text-anchor="middle" fill="#8a7f6f">f · map</text>
+            <rect x="390" y="14" width="90" height="30" rx="7" fill="#f3ece0" stroke="#bcae9a"/><text x="435" y="34" text-anchor="middle" fill="#8a7f6f">f · tap</text>
+          </g>
+          <path d="M150 60 C 260 90, 420 90, 540 40" stroke="#b14d3c" stroke-width="2" fill="none" marker-end="url(#rb)" stroke-dasharray="6 4"/>
+          <text x="350" y="108" class="s" font-size="13" fill="#9a6a60" font-style="italic" text-anchor="middle">discarded — each success step popped and thrown away</text>
+          <text x="560" y="34" class="m" font-size="12.5" fill="#756a5d">done: Failure</text>
+          <defs><marker id="rb" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#b14d3c"/></marker></defs>
+        </svg>
+      </div>
+      <figcaption>This is <code>try/catch</code> rebuilt from a flag and a stack. There's nothing to <em>catch</em> the failure yet — that's <a href="part-2-4.html">Section 2.4</a>. For now, a failure just unwinds everything.</figcaption>
+    </figure>
+
+    <div class="callout real">
+      <span class="tag">Where this maps in real Effect</span>
+      <p>The node names aren't made up. In the Effect source, the op-codes are <code>OP_SUCCESS</code>,
+        <code>OP_FAILURE</code>, <code>OP_SYNC</code>, and <code>OP_ON_SUCCESS</code> — our
+        <code>Succeed</code>, <code>Failure</code>, <code>Sync</code>, and <code>OnSuccess</code>.
+        <code>map</code> there is literally <code>flatMap(self, a =&gt; sync(() =&gt; f(a)))</code>, the
+        same definition we used.</p>
+      <p style="margin-bottom:0"><strong>One honest simplification:</strong> when our <code>Sync</code>
+        thunk throws, we stuff the thrown thing into the <code>failure</code> register. Real Effect
+        treats an unexpected throw as a <em>defect</em> — a separate channel from typed failures. We
+        meet that distinction in Section 2.4.</p>
+    </div>
+
+    <div class="pager">
+      <a class="prev" href="part-2.html"><div class="dir">← Part 2</div><div class="ttl">Overview</div></a>
+      <a class="next" href="part-2-2.html"><div class="dir">Section 2.2 →</div><div class="ttl">Async</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="index.html">Home</a>
+    <a href="part-2.html">Part 2 index</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>

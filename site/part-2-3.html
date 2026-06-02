@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2.3 Context — dependencies as data, and the R slot · The Effect Guide</title>
+<meta name="description" content="Where the third type parameter R comes from. A Tag names a dependency; service reads it and records the need in R; provide supplies it and removes it from R. The runtime carries a context register it copies and restores." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2-3.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="2.3 Context — dependencies as data, and the R slot" />
+<meta property="og:description" content="service adds a need to R; provide removes it. Run when R is never." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2-3.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.3 Context</p>
+    <div class="secpills">
+      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a class="active" href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a href="part-2-6.html">2.6</a>
+    </div>
+
+    <p class="eyebrow" style="margin-top:1.4em">Section 2.3</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(34px,5vw,48px);line-height:1.1;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">Context</h1>
+    <p class="lead">This is where the type finally grows its third slot. So far it was
+      <code>Effect&lt;A, E&gt;</code>. Now it's <code>Effect&lt;A, E, R&gt;</code>, and <code>R</code>
+      tracks what the effect still needs from the outside before it can run.</p>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: service · provide</p>
+
+    <h2>Why this exists: stop threading dependencies by hand</h2>
+    <p>Part 1 showed the pain: the repository needs a database, but to get it there you pass
+      <code>db</code> through every function in between. The fix is the same move we make every time —
+      <strong>turn the thing into data</strong>. Instead of passing the database as an argument, a
+      function just says "I need the Database," as a node in the description. The runtime carries a bag
+      of dependencies as it walks, and fills the need in when it reaches the node. Nobody in between
+      has to know.</p>
+
+    <h2>A Tag names a dependency</h2>
+    <pre><code class="language-typescript">interface Database { findUser: (id: string) =&gt; string }
+const Database = makeTag&lt;Database&gt;()("Database")</code></pre>
+    <p><code>Database</code> is now both a value (carrying the key <code>"Database"</code>) and a type
+      (remembering the service is <code>{ findUser: ... }</code>). It's how you refer to "the database
+      dependency" in both worlds.</p>
+
+    <h2>service reads a need · provide supplies it</h2>
+    <p><code>service(Database)</code> is an effect that produces the database — and, crucially, records
+      the need by putting the tag's key into <code>R</code>. Because <code>flatMap</code> unions the
+      <code>R</code>s of its parts (just like it unions the <code>E</code>s), the requirement flows up
+      through every function that uses it, without any of them naming it. <code>provide</code> is the
+      other end: it supplies the implementation and removes the key from <code>R</code>.</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 720 200" role="img" aria-label="service adds Database to R, provide removes it, then it runs">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <g class="s">
+            <rect x="20" y="60" width="200" height="64" rx="11" fill="#fbf1dc" stroke="#c79334" stroke-width="1.5"/>
+            <text x="120" y="84" font-size="13" font-weight="700" fill="#a9772a" text-anchor="middle">service(Database)</text>
+            <text x="120" y="106" class="m" font-size="11.5" fill="#86643a" text-anchor="middle">R = "Database"</text>
+            <text x="120" y="146" font-size="11.5" fill="#756a5d" text-anchor="middle" font-style="italic">adds a need</text>
+
+            <path d="M224 92 L268 92" stroke="#bcae9a" stroke-width="2" fill="none" marker-end="url(#a3)"/>
+
+            <rect x="272" y="60" width="200" height="64" rx="11" fill="#fbf1dc" stroke="#c79334" stroke-width="1.5"/>
+            <text x="372" y="84" font-size="13" font-weight="700" fill="#a9772a" text-anchor="middle">greet, handler, …</text>
+            <text x="372" y="106" class="m" font-size="11.5" fill="#86643a" text-anchor="middle">R = "Database"</text>
+            <text x="372" y="146" font-size="11.5" fill="#756a5d" text-anchor="middle" font-style="italic">rides up untouched</text>
+
+            <path d="M476 92 L520 92" stroke="#bcae9a" stroke-width="2" fill="none" marker-end="url(#a3)"/>
+
+            <rect x="524" y="60" width="180" height="64" rx="11" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.5"/>
+            <text x="614" y="84" font-size="13" font-weight="700" fill="#3c6440" text-anchor="middle">provide(…, Live)</text>
+            <text x="614" y="106" class="m" font-size="11.5" fill="#3c6440" text-anchor="middle">R = never</text>
+            <text x="614" y="146" font-size="11.5" fill="#5c6b58" text-anchor="middle" font-style="italic">removes it → runnable</text>
+          </g>
+          <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#bcae9a"/></marker></defs>
+        </svg>
+      </div>
+      <figcaption>We model <code>R</code> as a union of dependency keys. <code>service</code> adds one; <code>provide</code> removes one (<code>Exclude&lt;R, "Database"&gt;</code>). When <code>R</code> is <code>never</code>, nothing is missing — and only then will the runners accept the program.</figcaption>
+    </figure>
+
+    <pre><code class="language-typescript">service(Database) : Effect&lt;Database, never, "Database"&gt;   // the need, in R
+provide(greet("1"), Database, live)                      // R: "Database" → never</code></pre>
+    <p>That's why <code>runSync(provide(greet("1"), Database, live))</code> compiles but
+      <code>runSync(greet("1"))</code> does not: the runners require <code>R = never</code>. The
+      compiler rejects running an effect that still needs something. It's also the testing story made
+      concrete — provide the live database in one place, a fake one in another. Same
+      <code>greet</code>, different <code>provide</code>, no mocking library.</p>
+
+    <h2>How the runtime handles it: one register, two nodes</h2>
+    <p>The runtime gains a <code>context</code> register — a <code>Map</code> from key to
+      implementation. <strong><code>Service</code></strong> reads from it (it's just
+      <code>Succeed</code>, except the value comes from the context).
+      <strong><code>Provide</code></strong> writes to it — and this is the subtle one:</p>
+    <pre><code class="language-typescript">case "Provide": {
+  const previous = context
+  context = new Map(previous)        // copy, don't mutate
+  context.set(node.key, node.impl)   // add the impl
+  stack.push({ _op: "RestoreContext", context: previous }) // schedule the undo
+  current = toPrimitive(node.self)   // run self with the new context
+}</code></pre>
+    <p>Two things to notice. It <strong>copies</strong> the context instead of mutating it — so the new
+      dependency is scoped to <code>self</code> only, and you can provide different implementations to
+      different parts of one program without them stepping on each other. And it pushes a
+      <code>RestoreContext</code> frame so the old context comes back once <code>self</code> is done.</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 720 180" role="img" aria-label="Provide copies and extends the context for the duration of self, then restores it">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <text x="90" y="30" class="s" font-size="12.5" fill="#756a5d" text-anchor="middle">before</text>
+          <rect x="20" y="40" width="140" height="44" rx="9" fill="#f3ece0" stroke="#bcae9a"/>
+          <text x="90" y="67" class="m" font-size="12" fill="#8a7f6f" text-anchor="middle">{ }</text>
+
+          <path d="M168 62 L210 62" stroke="#4f7a52" stroke-width="2" fill="none" marker-end="url(#ag3)"/>
+          <text x="189" y="52" class="s" font-size="11" fill="#3c6440" text-anchor="middle">provide</text>
+
+          <text x="350" y="30" class="s" font-size="12.5" fill="#3c6440" text-anchor="middle">while running self — copied &amp; extended</text>
+          <rect x="220" y="40" width="260" height="44" rx="9" fill="#eef3ea" stroke="#4f7a52"/>
+          <text x="350" y="67" class="m" font-size="12" fill="#3c6440" text-anchor="middle">{ "Database" → impl }</text>
+
+          <path d="M488 62 L530 62" stroke="#dca049" stroke-width="2" fill="none" marker-end="url(#aa3)"/>
+          <text x="509" y="52" class="s" font-size="11" fill="#a9772a" text-anchor="middle">restore</text>
+
+          <text x="610" y="30" class="s" font-size="12.5" fill="#756a5d" text-anchor="middle">after</text>
+          <rect x="540" y="40" width="140" height="44" rx="9" fill="#f3ece0" stroke="#bcae9a"/>
+          <text x="610" y="67" class="m" font-size="12" fill="#8a7f6f" text-anchor="middle">{ }</text>
+
+          <text x="350" y="130" class="s" font-size="13" fill="#4a3f37" text-anchor="middle">The <tspan font-weight="700">RestoreContext</tspan> frame runs on the way back up whether we carry a value <tspan font-style="italic">or</tspan> a failure.</text>
+          <text x="350" y="152" class="s" font-size="12.5" fill="#756a5d" text-anchor="middle">It's the first frame that fires regardless of success — the same pattern that later powers cleanup.</text>
+          <defs>
+            <marker id="ag3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#4f7a52"/></marker>
+            <marker id="aa3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#dca049"/></marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption>The dependency exists for exactly the duration of <code>self</code> — added on the way in, removed on the way out.</figcaption>
+    </figure>
+
+    <div class="callout real">
+      <span class="tag">Where this maps in real Effect</span>
+      <p><code>service</code> is <code>OP_TAG</code>. The context register is real — Effect carries an
+        immutable <code>Context</code> while running, and <code>provide</code> layers onto it.</p>
+      <p style="margin-bottom:0"><strong>Two honest simplifications.</strong> Real Effect has no
+        <code>Provide</code> primitive; providing rides on <code>OP_WITH_RUNTIME</code>. We added an
+        explicit node because it's clearer to see. And we model <code>R</code> as a union of string
+        keys; real Effect uses the tag's identity type, so two tags can share a shape without
+        colliding. The behavior — add a need, remove it, run when <code>R</code> is empty — is the
+        same.</p>
+    </div>
+
+    <div class="pager">
+      <a class="prev" href="part-2-2.html"><div class="dir">← 2.2</div><div class="ttl">Async</div></a>
+      <a class="next" href="part-2-4.html"><div class="dir">Section 2.4 →</div><div class="ttl">Error handling</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="index.html">Home</a>
+    <a href="part-2.html">Part 2 index</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>

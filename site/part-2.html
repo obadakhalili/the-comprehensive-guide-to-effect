@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Part 2 — How Effect works under the hood · The Comprehensive Guide to Effect</title>
+<meta name="description" content="Rebuild a working version of Effect from scratch in six small sections: foundations, async, context, errors, concurrency, and ergonomics. By the end, an Effect is obviously just a data structure a loop walks." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Part 2 — How Effect works under the hood" />
+<meta property="og:description" content="Rebuild Effect's runtime from scratch in six small sections." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / Part 2</p>
+    <p class="eyebrow">Part 2 — The how</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(36px,5vw,52px);line-height:1.08;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">How it works under the hood</h1>
+    <p class="lead">Part 1 ended on one claim: an Effect is a description, not a running program. Now
+      we make that literal — we build the description, and we build the loop that walks it. By the end,
+      nothing about Effect is a black box.</p>
+
+    <p>We rebuild a small, fully-typed version of Effect in <strong>six sections</strong>, numbered
+      2.1 to 2.6. Each one adds a little to the same engine, so the runtime grows in front of you:</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 720 270" role="img" aria-label="Each section stacks on the previous to build the runtime">
+          <style>.s{font-family:"Inter",sans-serif}.m{font-family:"JetBrains Mono",monospace}</style>
+          <g class="s" font-size="13.5">
+            <rect x="120" y="222" width="480" height="34" rx="8" fill="#c0552b"/>
+            <text x="138" y="244" fill="#fff" font-weight="600">2.1 foundations</text>
+            <text x="582" y="244" fill="#fbe6da" text-anchor="end" class="m" font-size="12">an Effect is data · a loop runs it</text>
+
+            <rect x="135" y="184" width="450" height="34" rx="8" fill="#cf6233"/>
+            <text x="153" y="206" fill="#fff" font-weight="600">2.2 async</text>
+            <text x="567" y="206" fill="#fbe6da" text-anchor="end" class="m" font-size="12">the loop pauses &amp; resumes</text>
+
+            <rect x="150" y="146" width="420" height="34" rx="8" fill="#d97a44"/>
+            <text x="168" y="168" fill="#fff" font-weight="600">2.3 context</text>
+            <text x="552" y="168" fill="#fff2e6" text-anchor="end" class="m" font-size="12">dependencies as data · the R slot</text>
+
+            <rect x="165" y="108" width="390" height="34" rx="8" fill="#dca049"/>
+            <text x="183" y="130" fill="#fff" font-weight="600">2.4 errors</text>
+            <text x="537" y="130" fill="#fff7ea" text-anchor="end" class="m" font-size="12">a flag that short-circuits</text>
+
+            <rect x="180" y="70" width="360" height="34" rx="8" fill="#7f9a5c"/>
+            <text x="198" y="92" fill="#fff" font-weight="600">2.5 concurrency</text>
+            <text x="522" y="92" fill="#f1f5e9" text-anchor="end" class="m" font-size="12">more than one loop</text>
+
+            <rect x="195" y="32" width="330" height="34" rx="8" fill="#4f7a52"/>
+            <text x="213" y="54" fill="#fff" font-weight="600">2.6 ergonomics</text>
+            <text x="507" y="54" fill="#eef3ea" text-anchor="end" class="m" font-size="12">sugar, gone before runtime</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Cumulative. Each section is a folder of runnable code that extends the one below it. The base is the whole idea; everything above is more node types and a slightly bigger loop.</figcaption>
+    </figure>
+
+    <h2>The shape of the trick</h2>
+    <p>Before the sections, the one structural idea that makes all of this work. An <code>Effect</code>
+      wears two faces:</p>
+
+    <div class="compare">
+      <div class="pane good">
+        <div class="pane-head"><span class="dot"></span>What you see — the public type</div>
+        <pre><code class="language-typescript">// opaque. carries only A, E, R.
+// deliberately empty so inference stays clean.
+interface Effect&lt;out A, out E, out R&gt; {
+  readonly _op: string
+}</code></pre>
+      </div>
+      <div class="pane good">
+        <div class="pane-head"><span class="dot"></span>What the loop sees — a tagged node</div>
+        <pre><code class="language-typescript">// a plain object with an _op tag the runtime reads.
+type Primitive =
+  | { _op: "Succeed";   value: unknown }
+  | { _op: "Failure";   error: unknown }
+  | { _op: "Sync";      thunk: () =&gt; unknown }
+  | { _op: "OnSuccess"; self: Effect; f: (a) =&gt; Effect }
+  // ... more nodes get added each section</code></pre>
+      </div>
+    </div>
+
+    <p>It's <em>one object</em>. The constructors build a tagged <code>Primitive</code> and cast it to
+      <code>Effect&lt;A, E, R&gt;</code>; the runtime casts back and reads <code>_op</code>. So the
+      surface is fully typed, while the core works on loosely-typed nodes with a few localized casts.
+      <strong>That's how real Effect is built too</strong> — a typed API over an interpreter. Keep this
+      in mind and every section is just "add a node, add a case to the loop."</p>
+
+    <h2>The six sections</h2>
+
+    <div class="sec-list">
+      <a class="sec-item" href="part-2-1.html">
+        <span class="badge">2.1</span>
+        <div>
+          <h4>Foundations</h4>
+          <p>An Effect is data, and a loop runs it. Constructors, sequencing, and the continuation stack.</p>
+          <div class="methods">succeed · fail · sync · flatMap · map · tap</div>
+        </div>
+      </a>
+      <a class="sec-item" href="part-2-2.html">
+        <span class="badge">2.2</span>
+        <div>
+          <h4>Async</h4>
+          <p>How the loop pauses on a promise and picks back up later — with no <code>await</code> in your code.</p>
+          <div class="methods">async · tryPromise</div>
+        </div>
+      </a>
+      <a class="sec-item" href="part-2-3.html">
+        <span class="badge">2.3</span>
+        <div>
+          <h4>Context</h4>
+          <p>Dependencies as data, and where the <code>R</code> type parameter comes from.</p>
+          <div class="methods">service · provide</div>
+        </div>
+      </a>
+      <a class="sec-item" href="part-2-4.html">
+        <span class="badge">2.4</span>
+        <div>
+          <h4>Error handling</h4>
+          <p>How failure short-circuits the happy path, and how one node powers catch, branch, and retry.</p>
+          <div class="methods">catchAll · catchTags · retry</div>
+        </div>
+      </a>
+      <a class="sec-item" href="part-2-5.html">
+        <span class="badge">2.5</span>
+        <div>
+          <h4>Concurrency</h4>
+          <p>The Fiber: more than one walk of the tree at once, waiting, racing, and cancelling.</p>
+          <div class="methods">fork · raceFirst · forEachConcurrent</div>
+        </div>
+      </a>
+      <a class="sec-item" href="part-2-6.html">
+        <span class="badge">2.6</span>
+        <div>
+          <h4>Ergonomics</h4>
+          <p>The sugar that makes the API read top-to-bottom instead of inside-out — gone before runtime.</p>
+          <div class="methods">pipe · dual</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="callout real">
+      <span class="tag">Grounded in the real source</span>
+      <p style="margin:0">Every node we build maps to a real op-code in the Effect source
+        (<code>OP_SUCCESS</code>, <code>OP_ASYNC</code>, <code>OP_ON_FAILURE</code>, …). Where our toy
+        simplifies something, the section says so. This isn't a lookalike — it's the same machine,
+        smaller.</p>
+    </div>
+
+    <div class="pager">
+      <a class="prev" href="part-1.html"><div class="dir">← Part 1</div><div class="ttl">What is Effect</div></a>
+      <a class="next" href="part-2-1.html"><div class="dir">Section 2.1 →</div><div class="ttl">Foundations</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="index.html">Home</a>
+    <a href="part-1.html">Part 1</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>

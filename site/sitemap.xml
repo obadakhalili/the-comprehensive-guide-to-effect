@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://effect-guide.netlify.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-1.html</loc><priority>0.9</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2.html</loc><priority>0.9</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-1.html</loc><priority>0.7</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-2.html</loc><priority>0.7</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-3.html</loc><priority>0.7</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-4.html</loc><priority>0.7</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-5.html</loc><priority>0.7</priority></url>
+  <url><loc>https://effect-guide.netlify.app/part-2-6.html</loc><priority>0.7</priority></url>
+</urlset>

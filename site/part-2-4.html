@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2.4 Error handling — one node behind catch, branch, and retry · The Effect Guide</title>
+<meta name="description" content="How failure short-circuits the happy path until it reaches a handler. catchAll is the one new node (OnFailure); catchTags is catchAll plus a lookup; retry is catchAll pointing at itself. Includes an interactive short-circuit trace." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2-4.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="2.4 Error handling — one node behind catch, branch, and retry" />
+<meta property="og:description" content="catchAll, catchTags, and retry are all the same OnFailure node, used cleverly." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2-4.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.4 Error handling</p>
+    <div class="secpills">
+      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a class="active" href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a href="part-2-6.html">2.6</a>
+    </div>
+
+    <p class="eyebrow" style="margin-top:1.4em">Section 2.4</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(34px,5vw,48px);line-height:1.1;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">Error handling</h1>
+    <p class="lead">So far a failure has no escape — it unwinds the whole stack and the program ends.
+      This section adds the node that catches a failure and turns it into something else, and shows
+      that <code>catchTags</code> and <code>retry</code> are both just that node, used cleverly.</p>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: catchAll · catchTags · retry</p>
+
+    <h2>Why this exists: failure has to land somewhere</h2>
+    <p>Part 1 sold the idea of handling failure "at the edge." This is the machine that does it. Without
+      it, a typed error is only ever fatal. With it, you recover — turn a <code>NotFound</code> into a
+      404, retry a flaky call, fall back to a default. The error stops being the end of the program and
+      becomes a value you decide what to do with.</p>
+
+    <h2>catchAll: the one real new thing</h2>
+    <p><code>catchAll</code> builds an <code>OnFailure</code> node holding <code>self</code> and a
+      handler <code>g</code>. If <code>self</code> fails, <code>g</code> runs with the error and returns
+      the next effect. If <code>self</code> succeeds, <code>g</code> is skipped entirely.</p>
+    <pre><code class="language-typescript">catchAll(self, g) : Effect&lt;A | B, E2, R | R2&gt;
+//   the error channel goes E → E2: the original E is gone, g received it.
+//   g returns succeed → you recovered (E2 may be never)
+//   g returns fail    → a new error, like rethrowing</code></pre>
+
+    <h2>How the runtime catches it</h2>
+    <p><code>OnFailure</code> is the mirror of <code>OnSuccess</code>. The catching happens in the
+      unwind half, which now checks the frame kind against whether we're failing:</p>
+    <pre><code class="language-typescript">if (!inFailure &amp;&amp; frame._op === "OnSuccess") { current = frame.f(value);   break } // value → success step
+if ( inFailure &amp;&amp; frame._op === "OnFailure") { current = frame.g(failure); break } // failure → handler
+// otherwise: skip this frame and keep popping</code></pre>
+
+    <div class="callout key">
+      <span class="tag">The whole control-flow model, in one place</span>
+      <p style="margin:0">A <strong>value</strong> runs the next <code>OnSuccess</code> and skips
+        <code>OnFailure</code> frames. A <strong>failure</strong> runs the next <code>OnFailure</code>
+        and skips <code>OnSuccess</code> frames. That second line is the short-circuit: the happy path
+        is thrown away until a handler is found.</p>
+    </div>
+
+    <p>Step through a failure buried three levels deep. Watch it fall past every success step, untouched,
+      until it reaches the handler:</p>
+
+    <div class="stepper" data-stepper>
+      <script type="application/json">
+      {
+        "title": "tracing a failure short-circuiting to catchAll",
+        "steps": [
+          { "desc": "Start with the whole program in <span class='hl'>current</span> — a catchAll wrapping a chain that will fail partway. Stack empty.", "current": "OnFailure (catchAll)", "register": "—", "stack": [] },
+          { "desc": "Hit <span class='hl'>OnFailure</span>. Push its handler <span class='hl'>g</span> and dive into self.", "current": "OnSuccess (f1)", "register": "—", "stack": ["g · OnFailure"] },
+          { "desc": "Hit an OnSuccess. Push <span class='hl'>f1</span>, dive.", "current": "OnSuccess (f2)", "register": "—", "stack": ["g · OnFailure", "f1 · OnSuccess"] },
+          { "desc": "Hit another OnSuccess. Push <span class='hl'>f2</span>, dive deeper. The next node is where it breaks.", "current": "Failure(boom)", "register": "—", "stack": ["g · OnFailure", "f1 · OnSuccess", "f2 · OnSuccess"] },
+          { "desc": "Hit a <span class='hl'>Failure</span>. Write boom into the failure register and flip into failing mode. Unwinding now behaves differently.", "current": "Failure(boom)", "register": "boom", "stack": ["g · OnFailure", "f1 · OnSuccess", "f2 · OnSuccess"], "failing": true },
+          { "desc": "Pop <span class='hl'>f2</span>. We're failing and it's an OnSuccess — it doesn't match, so <span class='hl'>discard</span> it and keep popping. This is the short-circuit.", "current": "— skipping —", "register": "boom", "stack": ["g · OnFailure", "f1 · OnSuccess"], "failing": true },
+          { "desc": "Pop <span class='hl'>f1</span>. Also an OnSuccess — discard, keep popping. Every happy-path step is thrown away.", "current": "— skipping —", "register": "boom", "stack": ["g · OnFailure"], "failing": true },
+          { "desc": "Pop <span class='hl'>g</span>. We're failing and it's an OnFailure — it <span class='hl'>matches</span>. Run the handler: g(boom) builds succeed(recovered).", "current": "Succeed(recovered)", "register": "boom", "stack": [], "failing": true },
+          { "desc": "The handler returned a success. The register flips back to a value; failing mode is off.", "current": "Succeed(recovered)", "register": "recovered from boom", "stack": [] },
+          { "desc": "Stack empty, nothing in current. Done — Success. <span class='hl'>Depth never mattered</span>: the failure fell straight past every success step to the nearest handler.", "current": "— done —", "register": "recovered from boom", "stack": [] }
+        ]
+      }
+      </script>
+    </div>
+
+    <h2>catchTags is catchAll plus a lookup</h2>
+    <p>There's no <code>catchTags</code> node — it's <code>catchAll</code> with a dispatch on
+      <code>_tag</code>:</p>
+    <pre><code class="language-typescript">catchAll(self, (e) =&gt; {
+  const handler = handlers[e._tag]
+  return handler ? handler(e) : fail(e) // matched → run it; unmatched → rethrow
+})</code></pre>
+    <p>The types make each handler receive exactly its error variant, and any tag you <em>don't</em>
+      handle stays in the result's error type (<code>Exclude&lt;E, { _tag: keyof H }&gt;</code>). That's
+      how, back in Part 1, deleting a handler made the controller stop compiling — the unhandled error
+      didn't disappear from the type.</p>
+
+    <h2>retry is catchAll pointing at itself</h2>
+    <p>Also not a primitive. <code>retry</code> catches a failure and, if it's allowed to, runs the
+      <em>same effect</em> again:</p>
+    <pre><code class="language-typescript">retry(self, { times, while: pred }) =
+  catchAll(self, (e) =&gt;
+    times &gt; 0 &amp;&amp; pred(e)
+      ? retry(self, { times: times - 1, while: pred })  // run self again, one less try
+      : fail(e))                                          // out of tries → give up</code></pre>
+    <p>Because <code>self</code> is just data, running it again is free — it rebuilds from the same
+      description. It stops on three conditions: success, no tries left, or an error the predicate
+      rejects.</p>
+
+    <div class="takeaway"><code>catchAll</code> handles one failure. <code>catchTags</code> is
+      <code>catchAll</code> that branches on the tag. <code>retry</code> is <code>catchAll</code> that
+      loops back to the start. One node, three uses.</div>
+
+    <div class="callout real">
+      <span class="tag">Where this maps in real Effect</span>
+      <p><code>catchAll</code> is <code>OP_ON_FAILURE</code>. Real <code>catchTags</code> does the same
+        guarded lookup — it checks for a <code>_tag</code> before dispatching, so an error without one
+        passes through. Real <code>retry</code> is more general (it takes a <code>Schedule</code> —
+        delays, backoff, limits) but at its core it's the same recover-and-rerun loop.</p>
+      <p style="margin-bottom:0"><strong>One design note (not a simplification) and one that is:</strong></p>
+      <ol style="margin-bottom:0">
+        <li><strong>Exit is one-or-the-other, on purpose.</strong> <code>Exit</code> is a tagged union —
+          <code>Success</code> with a value, or <code>Failure</code> with an error, never both. A flat
+          object with an <code>ok</code> flag plus both fields could represent "succeeded but also
+          carries an error" — a nonsense state. The tagged union makes that impossible. Real Effect's
+          <code>Exit</code> is exactly this shape; making illegal states unrepresentable is a move
+          Effect leans on everywhere.</li>
+        <li><strong>We collapse the Cause.</strong> This one <em>is</em> a simplification. Real Effect
+          wraps your error in a <code>Cause</code> that distinguishes a typed failure (<code>Fail</code>)
+          from a defect (<code>Die</code> — an unexpected throw) from an interruption
+          (<code>Interrupt</code>). Real <code>catchAll</code> catches only <code>Fail</code>. Our single
+          error slot can't tell them apart. That <code>Cause</code> layer is what we traded for
+          simplicity.</li>
+      </ol>
+    </div>
+
+    <div class="pager">
+      <a class="prev" href="part-2-3.html"><div class="dir">← 2.3</div><div class="ttl">Context</div></a>
+      <a class="next" href="part-2-5.html"><div class="dir">Section 2.5 →</div><div class="ttl">Concurrency</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="index.html">Home</a>
+    <a href="part-2.html">Part 2 index</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Comprehensive Guide to Effect — Build Reliable & Readable TypeScript at Scale</title>
+<meta name="description" content="A hands-on guide to Effect, the TypeScript library for building complex applications that stay readable and reliable as they grow. Learn it twice — from the outside, then by rebuilding the runtime from scratch." />
+<link rel="canonical" href="https://effect-guide.netlify.app/" />
+<meta name="author" content="Obada Khalili" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="The Comprehensive Guide to Effect" />
+<meta property="og:title" content="The Comprehensive Guide to Effect" />
+<meta property="og:description" content="Build reliable & readable TypeScript at scale. Learn Effect twice — from the outside, then by rebuilding its runtime from scratch." />
+<meta property="og:url" content="https://effect-guide.netlify.app/" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Comprehensive Guide to Effect" />
+<meta name="twitter:description" content="Build reliable & readable TypeScript at scale. Learn Effect twice — from the outside, then by rebuilding its runtime from scratch." />
+<meta name="twitter:image" content="https://effect-guide.netlify.app/og-image.png" />
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "The Comprehensive Guide to Effect",
+  "description": "A hands-on guide to Effect, the TypeScript library for building complex applications that stay readable and reliable as they grow.",
+  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "about": "Effect TypeScript library"
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A hands-on guide to Effect</p>
+    <h1>The Comprehensive Guide to <span class="accent">Effect</span></h1>
+    <p class="sub">Effect is the TypeScript library for building complex applications that stay
+      readable and reliable as they grow. This guide teaches it twice — first what it is and why it
+      exists, then by rebuilding its engine from scratch until nothing is a black box.</p>
+
+    <div class="banner">
+      <p class="tagline">Build <span class="hl">Reliable</span> &amp; <span class="hl">Readable</span><br/>TypeScript Applications at Scale.</p>
+      <svg viewBox="0 0 440 150" width="440" style="flex:1 1 360px; max-width:480px" role="img" aria-label="The Effect type: Effect of A, E, R">
+        <style>
+          .mono { font-family: "JetBrains Mono", monospace; }
+          .sans { font-family: "Inter", sans-serif; }
+        </style>
+        <text x="0" y="58" class="mono" font-size="34" font-weight="700" fill="#2b2420">Effect&lt;</text>
+        <!-- A -->
+        <rect x="138" y="22" width="74" height="50" rx="11" fill="#fff" stroke="#4f7a52" stroke-width="2"/>
+        <rect x="138" y="22" width="74" height="6" rx="3" fill="#4f7a52"/>
+        <text x="175" y="57" class="mono" font-size="26" font-weight="700" fill="#3c6440" text-anchor="middle">A</text>
+        <text x="175" y="92" class="sans" font-size="12.5" fill="#756a5d" text-anchor="middle">value</text>
+        <!-- E -->
+        <rect x="222" y="22" width="74" height="50" rx="11" fill="#fff" stroke="#b14d3c" stroke-width="2"/>
+        <rect x="222" y="22" width="74" height="6" rx="3" fill="#b14d3c"/>
+        <text x="259" y="57" class="mono" font-size="26" font-weight="700" fill="#b14d3c" text-anchor="middle">E</text>
+        <text x="259" y="92" class="sans" font-size="12.5" fill="#756a5d" text-anchor="middle">error</text>
+        <!-- R -->
+        <rect x="306" y="22" width="74" height="50" rx="11" fill="#fff" stroke="#c79334" stroke-width="2"/>
+        <rect x="306" y="22" width="74" height="6" rx="3" fill="#dca049"/>
+        <text x="343" y="57" class="mono" font-size="26" font-weight="700" fill="#a9772a" text-anchor="middle">R</text>
+        <text x="343" y="92" class="sans" font-size="12.5" fill="#756a5d" text-anchor="middle">needs</text>
+        <text x="386" y="58" class="mono" font-size="34" font-weight="700" fill="#2b2420">&gt;</text>
+        <text x="0" y="128" class="sans" font-size="13.5" fill="#756a5d">One type carries all three: what you get, how it fails, what it needs to run.</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrap reading">
+
+    <h2>What this is</h2>
+    <p>Most guides show you how to <em>use</em> a tool. This one also shows you <em>why it exists</em>
+      and <em>how it actually works</em> — concretely, down to the loop that runs your code.</p>
+    <p>It comes in two parts. Read them in order; the second only lands once the first has shown you
+      what problem we're solving.</p>
+
+    <div class="grid-cards">
+      <a class="part-card" href="part-1.html">
+        <span class="num">PART 1</span>
+        <h3>What is Effect</h3>
+        <p>The <em>why</em>. One small program — a web handler reading a user from a database —
+          written twice, plain and with Effect, to show the three problems Effect fixes: invisible
+          errors, threaded dependencies, and async coloring.</p>
+        <span class="go">Read Part 1 <span class="arr">→</span></span>
+      </a>
+      <a class="part-card" href="part-2.html">
+        <span class="num">PART 2</span>
+        <h3>How it works under the hood</h3>
+        <p>The <em>how</em>. We rebuild a working version of Effect from scratch in six small
+          sections — until an <code>Effect</code> value is obviously just a data structure that a
+          loop walks.</p>
+        <span class="go">Read Part 2 <span class="arr">→</span></span>
+      </a>
+    </div>
+
+    <h2>The one idea</h2>
+    <p>A normal function's type tells you what it returns when everything goes right. It stays quiet
+      about two things: how it can <strong>fail</strong>, and what it <strong>needs</strong> to run.
+      Those silences turn into surprises — an exception you didn't expect, a dependency you forgot to
+      wire up.</p>
+    <p>Effect's move is to put all of it in one type:</p>
+
+    <figure class="full">
+      <div class="figcard">
+        <svg viewBox="0 0 760 200" role="img" aria-label="Breakdown of Effect Success Error Requirements">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <text x="380" y="46" class="m" font-size="26" font-weight="700" fill="#2b2420" text-anchor="middle">Effect&lt;Success, Error, Requirements&gt;</text>
+          <!-- connectors -->
+          <g stroke-width="2" fill="none">
+            <path d="M250 60 L210 104" stroke="#4f7a52"/>
+            <path d="M392 60 L392 104" stroke="#b14d3c"/>
+            <path d="M520 60 L560 104" stroke="#dca049"/>
+          </g>
+          <!-- cards -->
+          <g class="s">
+            <rect x="70" y="106" width="190" height="74" rx="12" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.5"/>
+            <text x="165" y="132" font-size="15" font-weight="700" fill="#3c6440" text-anchor="middle">Success</text>
+            <text x="165" y="155" font-size="13" fill="#5c6b58" text-anchor="middle">the value you get</text>
+            <text x="165" y="172" font-size="13" fill="#5c6b58" text-anchor="middle">if it works</text>
+
+            <rect x="285" y="106" width="190" height="74" rx="12" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.5"/>
+            <text x="380" y="132" font-size="15" font-weight="700" fill="#b14d3c" text-anchor="middle">Error</text>
+            <text x="380" y="155" font-size="13" fill="#7e5249" text-anchor="middle">the ways it can fail,</text>
+            <text x="380" y="172" font-size="13" fill="#7e5249" text-anchor="middle">as values</text>
+
+            <rect x="500" y="106" width="190" height="74" rx="12" fill="#fbf1dc" stroke="#c79334" stroke-width="1.5"/>
+            <text x="595" y="132" font-size="15" font-weight="700" fill="#a9772a" text-anchor="middle">Requirements</text>
+            <text x="595" y="155" font-size="13" fill="#86643a" text-anchor="middle">what it needs</text>
+            <text x="595" y="172" font-size="13" fill="#86643a" text-anchor="middle">from the outside</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Three slots. The failures and the dependencies stop being surprises and become part of the type.</figcaption>
+    </figure>
+
+    <p>The smallest possible before/after — a function that can fail:</p>
+
+    <div class="compare">
+      <div class="pane bad">
+        <div class="pane-head"><span class="dot"></span>Plain — the type hides the failure</div>
+        <pre><code class="language-typescript">const divide = (a: number, b: number): number =&gt; {
+  if (b === 0) throw new Error("Cannot divide by zero")
+  return a / b
+}
+// type says `number`. it does not say "or throws".
+// you only find the failure by reading the body.</code></pre>
+      </div>
+      <div class="pane good">
+        <div class="pane-head"><span class="dot"></span>Effect — the failure is in the type</div>
+        <pre><code class="language-typescript">import { Effect } from "effect"
+
+const divide = (a: number, b: number): Effect.Effect&lt;number, Error&gt; =&gt;
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+// the caller sees it without reading the body,
+// and the compiler makes sure they deal with it.</code></pre>
+      </div>
+    </div>
+
+    <p class="center"><a class="part-card" style="display:inline-block;text-align:left;max-width:520px;margin-top:1em" href="part-1.html">
+      <span class="num">START HERE</span>
+      <h3 style="margin-bottom:.2em">Part 1 — What is Effect →</h3>
+      <p>See the three problems on a real-shaped program, not a one-liner.</p>
+    </a></p>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="part-1.html">Part 1</a>
+    <a href="part-2.html">Part 2</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>

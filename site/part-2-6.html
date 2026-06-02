@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2.6 Ergonomics — pipe and dual, the sugar on top · The Effect Guide</title>
+<meta name="description" content="No new runtime behavior — just the sugar that makes the API read top-to-bottom instead of inside-out. pipe is left-to-right function application; dual counts arguments to support data-first and data-last. Gone before anything runs." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2-6.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="2.6 Ergonomics — pipe and dual" />
+<meta property="og:description" content="The sugar that makes Effect read top-to-bottom — and is gone before the runtime runs." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2-6.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.6 Ergonomics</p>
+    <div class="secpills">
+      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a class="active" href="part-2-6.html">2.6</a>
+    </div>
+
+    <p class="eyebrow" style="margin-top:1.4em">Section 2.6</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(34px,5vw,48px);line-height:1.1;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">Ergonomics</h1>
+    <p class="lead">This section adds <strong>no runtime behavior</strong>. It's the sugar that makes
+      the API pleasant — and the point is to see clearly that the pleasantness is a source-level thing,
+      gone by the time the runtime runs.</p>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: pipe · dual</p>
+
+    <h2>Why this exists: nested calls read inside-out</h2>
+    <p>To follow a chain of nested calls, you read from the innermost outward — the first thing that
+      runs is buried deepest, the last thing is on the outside. <code>pipe</code> flips it: the same
+      steps, listed top-to-bottom, in the order they run.</p>
+
+    <div class="compare">
+      <div class="pane bad">
+        <div class="pane-head"><span class="dot"></span>nested — read inside-out</div>
+        <pre><code class="language-typescript">provide(
+  catchAll(
+    timeout(
+      tap(
+        map(
+          retry(
+            flatMap(service(Api), (api) =&gt; api.get("/user")),
+            { times: 5, while: (e) =&gt; e._tag === "Network" }),
+          (b) =&gt; b.toUpperCase()),
+        (v) =&gt; sync(() =&gt; console.log(v))),
+      1000),
+    (e) =&gt; succeed(`recovered`)),
+  Api, ApiLive)</code></pre>
+      </div>
+      <div class="pane good">
+        <div class="pane-head"><span class="dot"></span>piped — read top-to-bottom</div>
+        <pre><code class="language-typescript">pipe(
+  flatMap(service(Api), (api) =&gt; api.get("/user")),
+  retry({ times: 5, while: (e) =&gt; e._tag === "Network" }),
+  map((body) =&gt; body.toUpperCase()),
+  tap((value) =&gt; sync(() =&gt; console.log(value))),
+  timeout(1000),
+  catchAll((e) =&gt; succeed(`recovered`)),
+  provide(Api, ApiLive)
+)</code></pre>
+      </div>
+    </div>
+    <p>Same tree, readable order: fetch, retry, uppercase, log, time-limit, recover, provide. They
+      build the identical node structure — only the source reads differently.</p>
+
+    <h2>pipe is just function application</h2>
+    <pre><code class="language-typescript">function pipe(a, ...fns) {
+  return fns.reduce((acc, fn) =&gt; fn(acc), a)
+}
+// pipe(x, f, g, h) is exactly h(g(f(x)))</code></pre>
+    <p>There's nothing clever here. The overloads above the implementation only thread the types through
+      each step so inference works. <code>pipe</code> runs while you <em>build</em> the effect, not while
+      it runs — by the time <code>runPromise</code> sees the result, <code>pipe</code> is gone; it
+      already did its job of assembling the tree.</p>
+
+    <h2>The problem dual solves</h2>
+    <p>For <code>pipe(x, f, g)</code> to work, each step must be a function that takes the value and
+      returns the next. But <code>map(self, f)</code> takes <em>two</em> arguments — you can't drop it
+      into a pipe, which only hands it one thing. So each combinator needs to work two ways, and
+      <code>dual</code> makes one definition do both by counting arguments:</p>
+    <pre><code class="language-typescript">const dual = (arity, body) =&gt; (...args) =&gt;
+  args.length &gt;= arity
+    ? body(...args)                  // enough args → run now (data-first)
+    : (self) =&gt; body(self, ...args)  // too few → wait for self (data-last)</code></pre>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 720 150" role="img" aria-label="dual counts arguments to choose data-first or data-last">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <rect x="280" y="20" width="160" height="40" rx="10" fill="#f3ece0" stroke="#bcae9a"/>
+          <text x="360" y="45" class="m" font-size="13" fill="#4a3f37" text-anchor="middle">map( … )</text>
+          <text x="360" y="78" class="s" font-size="12" fill="#756a5d" text-anchor="middle">how many args?</text>
+
+          <path d="M300 60 L160 100" stroke="#4f7a52" stroke-width="1.6" fill="none" marker-end="url(#ag6)"/>
+          <path d="M420 60 L560 100" stroke="#c0552b" stroke-width="1.6" fill="none" marker-end="url(#ar6)"/>
+
+          <rect x="40" y="104" width="250" height="38" rx="9" fill="#eef3ea" stroke="#4f7a52"/>
+          <text x="165" y="128" class="m" font-size="12" fill="#3c6440" text-anchor="middle">map(self, f) → run now</text>
+
+          <rect x="430" y="104" width="250" height="38" rx="9" fill="#fbeee6" stroke="#c0552b"/>
+          <text x="555" y="128" class="m" font-size="12" fill="#9f4420" text-anchor="middle">map(f) → (self) ⇒ …  for pipe</text>
+          <defs>
+            <marker id="ag6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#4f7a52"/></marker>
+            <marker id="ar6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#c0552b"/></marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption>The argument it always defers is <code>self</code>, the effect — because that's the one <code>pipe</code> will supply. The body is written <code>self</code>-first; the short call holds that slot open.</figcaption>
+    </figure>
+
+    <p>The rule for which combinators get <code>dual</code> is simple: the <em>transformers</em> —
+      <code>flatMap</code>, <code>map</code>, <code>tap</code>, <code>catchAll</code>, <code>retry</code>,
+      <code>timeout</code>, <code>provide</code> — all take a <code>self</code> first, so they're dual.
+      The <em>constructors</em> (<code>succeed</code>, <code>fail</code>, <code>service</code>) build an
+      effect from plain inputs; there's no <code>self</code> to defer.</p>
+
+    <div class="callout real">
+      <span class="tag">Where this maps in real Effect</span>
+      <p style="margin:0">This is exactly how the real library works. Every pipeable combinator is built
+        with an internal <code>dual</code> helper that counts arguments, and <code>import { pipe } from
+        "effect"</code> is the same left-to-right applier. None of it is runtime machinery — it's the
+        seam between "code that's pleasant to write" and "the data structure the interpreter walks."</p>
+    </div>
+
+    <hr/>
+
+    <h2>The whole guide, in one breath</h2>
+    <p>You started with a claim: an Effect is a description, not a running program. Six sections later,
+      that's not a claim — it's something you built.</p>
+
+    <div class="callout key">
+      <span class="tag">What an Effect is</span>
+      <ul style="margin:0">
+        <li>An Effect is a <strong>tree of tagged nodes</strong> (<code>succeed</code>,
+          <code>flatMap</code>, <code>async</code>, <code>service</code>, …).</li>
+        <li>A <strong>fiber</strong> is a loop with registers and a stack that walks the tree.</li>
+        <li><strong>Sequencing</strong> is a stack of postponed steps. <strong>Failure</strong> is a
+          flag that throws away the success steps until it reaches a handler. <strong>Async</strong> is
+          the loop returning out of itself and being called again later.
+          <strong>Dependencies</strong> are a context register. <strong>Concurrency</strong> is more
+          than one fiber.</li>
+        <li><strong>Everything fancy</strong> — <code>map</code>, <code>tap</code>, <code>retry</code>,
+          <code>timeout</code>, <code>catchTags</code>, <code>forEachConcurrent</code> — is built from
+          that same handful of primitives.</li>
+        <li>And <strong>pipe / dual</strong> are sugar on top, gone before anything runs.</li>
+      </ul>
+    </div>
+
+    <p class="takeaway">That's Effect. Not magic — mechanics.</p>
+
+    <div class="pager">
+      <a class="prev" href="part-2-5.html"><div class="dir">← 2.5</div><div class="ttl">Concurrency</div></a>
+      <a class="next" href="index.html"><div class="dir">Back to start →</div><div class="ttl">Home</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <span class="sp"></span>
+    <a href="index.html">Home</a>
+    <a href="part-1.html">Part 1</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>
