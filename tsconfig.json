@@ -27,5 +27,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  // the Effect source is vendored under repos/ for reference only — don't typecheck it.
+  "exclude": ["node_modules", "repos"]
 }
