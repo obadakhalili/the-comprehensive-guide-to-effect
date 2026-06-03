@@ -115,10 +115,10 @@
 }</code></pre>
     <div class="callout key">
       <span class="tag">What a fiber actually is</span>
-      <p style="margin:0">Not a thread, not magic — the registers and stack we've had all along, now
-        wrapped so you can make more than one. <code>observers</code> is the only genuinely new piece:
-        a list of "who wants this fiber's result." When it finishes, it calls each observer with the
-        exit. That's how one fiber waits on another.</p>
+      <p style="margin:0">A fiber is not a thread — it's the registers and stack we've had all along,
+        wrapped so you can have more than one. <code>observers</code> is the only new piece: a list of
+        "who wants this fiber's result." When it finishes, it calls each observer with the exit. That's
+        how one fiber waits on another.</p>
     </div>
 
     <h2>fork: start a second walk</h2>
@@ -180,7 +180,7 @@
       in order. If they all succeed you get the array; if one fails, the rest are interrupted and the
       whole thing fails.</p>
 
-    <h2>Interruption: the canceler earns its keep</h2>
+    <h2>Interruption: the canceler</h2>
     <p>Back in 2.2, <code>async</code>'s register could return a value we ignored. Now it returns a
       <strong>canceler</strong> — how to abort the work it started:</p>
     <pre><code class="language-typescript">const sleep = (ms) =&gt; async((resume) =&gt; {
@@ -194,9 +194,9 @@ interrupt() {
   this.inFailure = true
   this.step()                         // unwind from here
 }</code></pre>
-    <p>This is why the race doesn't leave a dangling timer keeping the process alive. The canceler isn't
-      decoration — it's what makes "stop the work you no longer need" real instead of just ignoring a
-      result.</p>
+    <p>This is why the race doesn't leave a dangling timer keeping the process alive. Without the
+      canceler, interrupting would only ignore the loser's result while its underlying work — the
+      pending timer — kept running.</p>
 
     <div class="callout why">
       <span class="tag">"Does interrupt just call a cleanup function? Is this where AbortSignal comes in?"</span>

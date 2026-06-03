@@ -63,8 +63,8 @@
     <p class="eyebrow">A hands-on guide to Effect</p>
     <h1>The Comprehensive Guide to <span class="accent">Effect</span></h1>
     <p class="sub">Effect is a TypeScript library for building complex applications that stay
-      readable and reliable as they grow. This guide teaches it twice — first what it is and why it
-      exists, then by rebuilding its engine from scratch until nothing is a black box.</p>
+      readable and reliable as they grow. This guide covers it twice — first what it is and why it
+      exists, then by rebuilding its engine from scratch, piece by piece.</p>
 
     <div class="banner">
       <p class="tagline">Build <span class="hl">Readable</span> &amp; <span class="hl">Reliable</span><br/>TypeScript Applications at Scale.</p>
@@ -130,7 +130,7 @@
       about two things: how it can <strong>fail</strong>, and what it <strong>needs</strong> to run.
       Those silences turn into surprises — an exception you didn't expect, a dependency you forgot to
       wire up.</p>
-    <p>Effect's move is to put all of it in one type:</p>
+    <p>Effect puts all three in one type:</p>
 
     <figure class="full">
       <div class="figcard">
@@ -162,7 +162,7 @@
           </g>
         </svg>
       </div>
-      <figcaption>Three slots. The failures and the dependencies stop being surprises and become part of the type.</figcaption>
+      <figcaption>Three slots: the value, the ways it can fail, and what it needs — all in the type.</figcaption>
     </figure>
 
     <p>The smallest possible before/after — a function that can fail:</p>

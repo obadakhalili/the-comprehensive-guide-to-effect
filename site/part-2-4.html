@@ -79,12 +79,12 @@
 
 
     <h2>Why this exists: failure has to land somewhere</h2>
-    <p>Part 1 sold the idea of handling failure "at the edge." This is the machine that does it. Without
-      it, a typed error is only ever fatal. With it, you recover — turn a <code>NotFound</code> into a
-      404, retry a flaky call, fall back to a default. The error stops being the end of the program and
-      becomes a value you decide what to do with.</p>
+    <p>Part 1 described handling failure "at the edge." This section is the part of the runtime that
+      does it. Without it, a typed error is always fatal — it propagates to the top and stops the
+      program. With it, you can recover: turn a <code>NotFound</code> into a 404, retry a flaky call,
+      or fall back to a default.</p>
 
-    <h2>catchAll: the one real new thing</h2>
+    <h2>catchAll: the one new node</h2>
     <p><code>catchAll</code> builds an <code>OnFailure</code> node holding <code>self</code> and a
       handler <code>g</code>. If <code>self</code> fails, <code>g</code> runs with the error and returns
       the next effect. If <code>self</code> succeeds, <code>g</code> is skipped entirely.</p>

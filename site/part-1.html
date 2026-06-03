@@ -94,9 +94,9 @@
       outside.</p>
     </div>
 
-    <p>The rest of Part 1 shows why that matters on a real-shaped program. We take one small feature —
-      a web handler that reads a user profile from a database — and write it twice. It has the shape
-      every backend has:</p>
+    <p>The rest of Part 1 shows this on a real-shaped program. We take one small feature — a web
+      handler that reads a user profile from a database — and write it twice. It has the shape every
+      backend has:</p>
 
     <figure>
       <div class="figcard">
@@ -126,7 +126,7 @@
           </defs>
         </svg>
       </div>
-      <figcaption>A handler calls a service, the service calls a repository, the repository talks to the database. Three problems live in this little stack.</figcaption>
+      <figcaption>A handler calls a service, the service calls a repository, the repository talks to the database. All three problems show up in this stack.</figcaption>
     </figure>
 
     <h2>Problem 1 · Errors are invisible</h2>
@@ -211,8 +211,8 @@ const getProfile = (
       <code>unknown</code>, and nothing forces the list to be complete. Add a new error three layers
       down and it still compiles, silently becoming a 500.</p>
 
-    <p class="takeaway">Write each layer as if it always succeeds. Handle every failure once, at the
-      edge, with the compiler keeping the list complete.</p>
+    <p class="takeaway">Each layer is written for the success case. Failures are handled once, at the
+      edge, and the compiler checks that every case is covered.</p>
 
     <h2>Problem 2 · Dependencies get threaded everywhere</h2>
     <p>The repository needs a database client. <em>Only</em> the repository uses it. But in plain code
@@ -264,7 +264,8 @@ const getProfile = (
         can enforce row-level security. A different client every request means you must supply it when
         you run, not hard-code it at the top of a file.</p>
       <p style="margin-bottom:0">Both point at the same fix: make the dependency something the program
-        <em>asks for</em> and you <em>supply from the outside</em>. That's exactly what Effect does.</p>
+        <em>asks for</em> and you <em>supply from the outside</em>, at the point you run it. That's
+        what the service below does.</p>
     </div>
 
     <p>The database is declared as a <em>service</em>. The repository asks for it; nobody else mentions
@@ -383,9 +384,9 @@ const loadName = (id: string) =&gt; Effect.promise(() =&gt; db.getAsync(id)) // 
     <p>The "sync vs async" choice is no longer in the type, so it doesn't spread. It's settled at
       runtime, when the program actually runs — which is exactly what Part 2 explains.</p>
 
-    <h2>What's actually going on</h2>
-    <p>You may have noticed: in every Effect version, nothing ran until the program was handed to a
-      runner at the very bottom. Calling <code>findUser(id)</code>, <code>getProfile(id)</code>, even
+    <h2>What's going on underneath</h2>
+    <p>In every Effect version, nothing ran until the program was handed to a runner at the very
+      bottom. Calling <code>findUser(id)</code>, <code>getProfile(id)</code>, even
       the whole <code>handleGetProfile(id)</code> built <strong>values</strong>. They didn't do
       anything. The database wasn't touched.</p>
 
@@ -407,10 +408,10 @@ const loadName = (id: string) =&gt; Effect.promise(() =&gt; db.getAsync(id)) // 
     </figure>
 
     <div class="callout key">
-      <span class="tag">The idea the whole library is built on</span>
+      <span class="tag">The core idea</span>
       <p style="margin:0">An <code>Effect</code> is not a running program. It's a <strong>description</strong>
-        of one — a plain data structure. It sits there doing nothing until a runtime walks it and
-        carries it out.</p>
+        of one — a plain data structure. It does nothing until a runtime walks it and carries it
+        out.</p>
     </div>
 
     <p>Everything in Part 1 falls out of that one fact. Errors can be in the type because they're

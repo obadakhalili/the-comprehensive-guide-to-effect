@@ -169,17 +169,17 @@
 
     <div class="callout real">
       <span class="tag">Where this maps in real Effect</span>
-      <p style="margin:0">This is exactly how the real library works. Every pipeable combinator is built
-        with an internal <code>dual</code> helper that counts arguments, and <code>import { pipe } from
-        "effect"</code> is the same left-to-right applier. None of it is runtime machinery — it's the
-        seam between "code that's pleasant to write" and "the data structure the interpreter walks."</p>
+      <p style="margin:0">The real library works the same way. Every pipeable combinator is built with
+        an internal <code>dual</code> helper that counts arguments, and <code>import { pipe } from
+        "effect"</code> is the same left-to-right applier. None of it is runtime machinery — it runs
+        while you build the effect, and is gone by the time the interpreter walks it.</p>
     </div>
 
     <hr/>
 
-    <h2>The whole guide, in one breath</h2>
-    <p>You started with a claim: an Effect is a description, not a running program. Six sections later,
-      that's not a claim — it's something you built.</p>
+    <h2>Recap</h2>
+    <p>Part 1 started with a claim: an Effect is a description, not a running program. Six sections
+      later, you've built the thing that makes it true:</p>
 
     <div class="callout key">
       <span class="tag">What an Effect is</span>
@@ -199,7 +199,7 @@
       </ul>
     </div>
 
-    <p class="takeaway">That's Effect. Not magic — mechanics.</p>
+    <p class="takeaway">That's all Effect is underneath: a data structure, and a loop that walks it.</p>
 
     <div class="pager">
       <a class="prev" href="part-2-5.html"><div class="dir">← 2.5</div><div class="ttl">Concurrency</div></a>

@@ -115,9 +115,9 @@
   node.register(resume)         // start the work
   return                        // LEAVE the loop. the thread is now free.
 }</code></pre>
-    <p>The order is the heart of it: build <code>resume</code>, call <code>register(resume)</code>
-      (this starts the work <em>now</em>), then <code>return</code> — the loop exits, the call stack
-      empties, the thread is free. Later the work finishes and calls
+    <p>The order matters: build <code>resume</code>, call <code>register(resume)</code> (this starts
+      the work <em>now</em>), then <code>return</code> — the loop exits, the call stack empties, the
+      thread is free. Later the work finishes and calls
       <code>resume(succeed(value))</code>, which sets <code>current</code> and calls
       <code>step()</code> again.</p>
 
@@ -156,11 +156,11 @@
     </figure>
 
     <div class="callout key">
-      <span class="tag">This is the answer to coloring</span>
-      <p style="margin:0">You never wrote <code>await</code>. The <em>loop</em> decided to step out on a
-        slow node and come back. A sync node and an async node sit in the same chain; the only
-        difference is that the async one makes the loop leave and re-enter. So sync and async compose
-        the same way, with nothing marked.</p>
+      <span class="tag">Why coloring goes away</span>
+      <p style="margin:0">You never wrote <code>await</code>. The loop stepped out on a slow node and
+        came back. A sync node and an async node sit in the same chain; the only difference is that the
+        async one makes the loop leave and re-enter. So sync and async compose the same way, with
+        nothing marked in the code.</p>
     </div>
 
     <h2>tryPromise is built on async</h2>

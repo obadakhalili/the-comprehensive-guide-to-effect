@@ -225,11 +225,11 @@ while (frame) {
 
     <div class="callout real">
       <span class="tag">Where this maps in real Effect</span>
-      <p>The node names aren't made up. In the Effect source, the op-codes are <code>OP_SUCCESS</code>,
+      <p>The node names come from the Effect source. There the op-codes are <code>OP_SUCCESS</code>,
         <code>OP_FAILURE</code>, <code>OP_SYNC</code>, and <code>OP_ON_SUCCESS</code> — our
         <code>Succeed</code>, <code>Failure</code>, <code>Sync</code>, and <code>OnSuccess</code>.
-        <code>map</code> there is literally <code>flatMap(self, a =&gt; sync(() =&gt; f(a)))</code>, the
-        same definition we used.</p>
+        <code>map</code> there is also <code>flatMap(self, a =&gt; sync(() =&gt; f(a)))</code>, the same
+        definition we used.</p>
       <p style="margin-bottom:0"><strong>One honest simplification:</strong> when our <code>Sync</code>
         thunk throws, we stuff the thrown thing into the <code>failure</code> register. Real Effect
         treats an unexpected throw as a <em>defect</em> — a separate channel from typed failures. We
