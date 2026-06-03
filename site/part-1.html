@@ -29,7 +29,7 @@
   "@type": "TechArticle",
   "headline": "Part 1 — What is Effect",
   "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
-  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "author": { "@type": "Person", "name": "obada" },
   "url": "https://effect-guide.netlify.app/part-1.html",
   "about": "Effect TypeScript library"
 }
@@ -197,23 +197,27 @@ const getProfile = (
       </div>
       <div class="pane good">
         <div class="pane-head"><span class="dot"></span>Effect — handled, and checked</div>
-        <pre><code class="language-typescript">getProfile(id).pipe(
-  Effect.map((p): HttpResponse =&gt;
-    ({ status: 200, body: JSON.stringify(p) })),
-  Effect.catchTags({
-    UserNotFound:    (e) =&gt; Effect.succeed({ status: 404, body: `no user ${e.id}` }),
-    ValidationError: (e) =&gt; Effect.succeed({ status: 422, body: e.reason }),
-    DbError:         ()  =&gt; Effect.succeed({ status: 500, body: "internal" }),
-  })
-)</code></pre>
+        <pre><code class="language-typescript">const handleGetProfile = (id: string): Effect.Effect&lt;HttpResponse&gt; =&gt;
+  getProfile(id).pipe(             // declared error slot: none
+    Effect.map((p): HttpResponse =&gt;
+      ({ status: 200, body: JSON.stringify(p) })),
+    Effect.catchTags({
+      UserNotFound:    (e) =&gt; Effect.succeed({ status: 404, body: `no user ${e.id}` }),
+      ValidationError: (e) =&gt; Effect.succeed({ status: 422, body: e.reason }),
+      DbError:         ()  =&gt; Effect.succeed({ status: 500, body: "internal" }),
+    })
+  )</code></pre>
       </div>
     </div>
 
-    <p>The Effect version's error slot ends up empty (<code>never</code>): every failure handled. And
-      <code>catchTags</code> is checked — delete a handler and the unhandled error stays in the type,
-      so it stops compiling. The plain <code>catch</code> can't do that: <code>err</code> is
-      <code>unknown</code>, and nothing forces the list to be complete. Add a new error three layers
-      down and it still compiles, silently becoming a 500.</p>
+    <p>The point is the return type: <code>Effect.Effect&lt;HttpResponse&gt;</code> declares an empty
+      error slot (<code>never</code>), which asks the compiler to hold you to it. Delete a handler and
+      the unhandled error stays in the type, no longer matches <code>never</code>, and it stops
+      compiling. The plain <code>catch</code> can't do that: <code>err</code> is <code>unknown</code>,
+      and nothing forces the list to be complete. Add a new error three layers down and it still
+      compiles, silently becoming a 500.</p>
+    <p>(The check comes from declaring "no errors left", not from <code>catchTags</code> by itself —
+      we come back to exactly this point in <a href="part-2-7.html">2.7</a>.)</p>
 
     <p class="takeaway">Each layer is written for the success case. Failures are handled once, at the
       edge, and the compiler checks that every case is covered.</p>
@@ -439,7 +443,7 @@ const loadName = (id: string) =&gt; Effect.promise(() =&gt; db.getAsync(id)) // 
     <span>The Comprehensive Guide to Effect</span>
     <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
     <span class="sp"></span>
-    <span class="love">Made with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">Obada Khalili</a></span>
+    <span class="love">with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">obada</a></span>
   </div>
 </footer>
 

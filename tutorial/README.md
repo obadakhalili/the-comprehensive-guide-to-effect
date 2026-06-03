@@ -37,8 +37,9 @@ These files use the real `effect` library.
 
 ## Part 2 — How it works under the hood
 
-[`02-under-the-hood/`](./02-under-the-hood/) — the *how*. We build our own tiny Effect. Part 2 is six
-**sections**, numbered 2.1 to 2.6. Each is a folder you can run, and each one extends the previous:
+[`02-under-the-hood/`](./02-under-the-hood/) — the *how*. We build our own tiny Effect. Part 2 is
+seven **sections**, numbered 2.1 to 2.7. The first six build the runtime, each adding to the section
+before it; the last uses it to write a real program:
 
 - **2.1** [`01-foundations/`](./02-under-the-hood/01-foundations/) — `succeed`, `fail`, `sync`,
   `flatMap`, `map`, `tap`. The core idea: an Effect is data, and a loop runs it.
@@ -52,6 +53,8 @@ These files use the real `effect` library.
   `forEachConcurrent`. Running more than one thing at once, and cancelling.
 - **2.6** [`06-ergonomics/`](./02-under-the-hood/06-ergonomics/) — `pipe`, `dual`. The sugar that
   makes the API read top-to-bottom instead of inside-out.
+- **2.7** [`07-real-world/`](./02-under-the-hood/07-real-world/) — no new runtime. A real concurrent,
+  retrying, dependency-injected program built from everything above.
 
 Every claim about how the real library works is checked against the Effect source in
 [`repos/effect`](../repos/effect). Where our toy simplifies something, the README says so.

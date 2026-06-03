@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<title>2.7 Putting it together — a real program on the toy runtime · The Effect Guide</title>
+<meta name="description" content="The capstone: load a user, their posts, and comment counts concurrently — with retry, a timeout, a swappable HTTP service, and errors handled at the edge — built entirely from the ~20 functions of the toy runtime, in pipe style." />
+<link rel="canonical" href="https://effect-guide.netlify.app/part-2-7.html" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="2.7 Putting it together — a real program" />
+<meta property="og:description" content="A real concurrent, retrying, dependency-injected program built entirely from the toy runtime." />
+<meta property="og:url" content="https://effect-guide.netlify.app/part-2-7.html" />
+<meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "2.7 Putting it together — a real program on the toy runtime",
+  "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
+  "author": { "@type": "Person", "name": "obada" },
+  "url": "https://effect-guide.netlify.app/part-2-7.html",
+  "about": "Effect TypeScript library"
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">
+      <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#c0552b"/><g fill="none" stroke="#faf6ef" stroke-width="3.4" stroke-linecap="round"><path d="M20 22 H44"/><path d="M20 32 H38"/><path d="M20 42 H44"/></g><circle cx="46.5" cy="32" r="3.4" fill="#dca049"/></svg>
+      The Effect Guide
+    </a>
+    <nav class="nav">
+      <a href="part-1.html">Part 1 · What is Effect</a>
+      <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap prose">
+    <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.7 Putting it together</p>
+    <div class="secpills">
+      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a href="part-2-6.html">2.6</a><a class="active" href="part-2-7.html">2.7</a>
+    </div>
+
+    <p class="eyebrow" style="margin-top:1.4em">Section 2.7</p>
+    <h1 style="font-family:var(--serif);font-size:clamp(34px,5vw,48px);line-height:1.1;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">Putting it together</h1>
+    <p class="lead">Sections 2.1–2.6 built the runtime. This one uses it — no new code — to write a
+      real program: concurrent, retrying, dependency-injected, with every failure handled at the edge.</p>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Uses: service · provide · tryPromise · retry · timeout · catchTags · forEachConcurrent · pipe</p>
+
+    <div class="callout repo">
+      <span class="tag">Follow along with the code</span>
+      <p style="margin:0">No new runtime — this section's <code>runtime.ts</code> just re-exports the
+        finished toy from 2.6. Run <code>example.ts</code> with <code>bun</code> and watch the retry
+        heal a glitchy endpoint.</p>
+      <div class="repo-files">
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/tree/main/tutorial/02-under-the-hood/07-real-world" target="_blank" rel="noopener"><svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> 07-real-world/</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/02-under-the-hood/07-real-world/example.ts" target="_blank" rel="noopener">example.ts</a>
+      </div>
+    </div>
+
+    <div class="toc" data-toc></div>
+
+    <h2>The task</h2>
+    <p>Load a user, their posts, and a comment count for each post — concurrently — retrying transient
+      network errors, with an overall timeout, and every failure handled once at the edge.</p>
+    <p>That one sentence touches every part of the runtime. Nothing new is needed: the ~20 functions
+      from 2.1–2.6 cover all of it.</p>
+
+    <table>
+      <thead><tr><th>What the task needs</th><th>Built in</th></tr></thead>
+      <tbody>
+        <tr><td>A swappable HTTP client, not threaded through every call</td><td>service / provide — 2.3</td></tr>
+        <tr><td>Turn a promise (a fetch) into an effect</td><td>tryPromise / async — 2.2</td></tr>
+        <tr><td>Fetch all comment counts at once</td><td>forEachConcurrent — 2.5</td></tr>
+        <tr><td>Give up after N seconds</td><td>timeout — 2.5</td></tr>
+        <tr><td>Retry only network errors</td><td>retry — 2.4</td></tr>
+        <tr><td>Handle each failure by its tag, at the edge</td><td>catchTags — 2.4</td></tr>
+        <tr><td>Read top-to-bottom</td><td>pipe — 2.6</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Errors and the service</h2>
+    <p>The errors are plain tagged objects — the shape <code>catchTags</code> dispatches on. The HTTP
+      client is declared as a <strong>service</strong>: a dependency recorded in <code>R</code> until
+      we provide it, not an argument threaded through every function.</p>
+    <pre><code class="language-typescript">interface NotFoundError { readonly _tag: "NotFound"; readonly url: string }
+interface NetworkError  { readonly _tag: "Network";  readonly message: string }
+
+interface Http {
+  get: &lt;T&gt;(url: string) =&gt; Effect&lt;T, NotFoundError | NetworkError&gt;
+}
+const Http = makeTag&lt;Http&gt;()("Http")</code></pre>
+
+    <h2>The logic, in pipe style</h2>
+    <p>Each layer asks the context for the client and never names it again. The requirement
+      (<code>R = "Http"</code>) rides up the type on its own:</p>
+    <pre><code class="language-typescript">const getUser = (id: number) =&gt;
+  flatMap(service(Http), (http) =&gt; http.get&lt;User&gt;(`/users/${id}`))
+
+const getPosts = (userId: number) =&gt;
+  flatMap(service(Http), (http) =&gt; http.get&lt;Post[]&gt;(`/users/${userId}/posts`))
+
+const getCommentCount = (postId: number) =&gt;
+  flatMap(service(Http), (http) =&gt;
+    map(http.get&lt;unknown[]&gt;(`/posts/${postId}/comments`), (comments) =&gt; comments.length))
+
+const loadUserPosts = (userId: number) =&gt;
+  pipe(
+    getUser(userId),
+    flatMap((user) =&gt; getPosts(user.id)),
+    flatMap((posts) =&gt;
+      // fetch every post's comment count at once, not one by one
+      forEachConcurrent(posts, (post) =&gt;
+        map(getCommentCount(post.id), (comments): PostWithCount =&gt; ({ post, comments })))))</code></pre>
+
+    <div class="callout note">
+      <span class="tag">What gen would add</span>
+      <p style="margin:0">Real Effect lets you write this with generator syntax —
+        <code>Effect.gen(function* () { const user = yield* getUser(id); const posts = yield*
+        getPosts(user.id); ... })</code>. We never built that. For a straight chain like
+        <code>loadUserPosts</code>, <code>pipe</code> handles it fine. <code>gen</code> earns its keep
+        when a later step needs a value bound several steps <em>earlier</em>: with <code>pipe</code>
+        you'd have to nest to keep it in scope, while <code>gen</code> lets you just refer to it. That's
+        the case it's for.</p>
+    </div>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 720 210" role="img" aria-label="getUser then getPosts, then comment counts fetched concurrently and collected">
+          <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
+          <g class="m" font-size="12.5">
+            <rect x="20" y="86" width="120" height="38" rx="9" fill="#fff" stroke="#c0552b" stroke-width="1.4"/>
+            <text x="80" y="109" fill="#2b2420" text-anchor="middle">getUser(1)</text>
+            <rect x="170" y="86" width="120" height="38" rx="9" fill="#fff" stroke="#c0552b" stroke-width="1.4"/>
+            <text x="230" y="109" fill="#2b2420" text-anchor="middle">getPosts</text>
+          </g>
+          <path d="M140 105 L168 105" stroke="#c0552b" stroke-width="1.6" fill="none" marker-end="url(#a7)"/>
+
+          <!-- concurrent group -->
+          <rect x="330" y="36" width="250" height="138" rx="12" fill="none" stroke="#4f7a52" stroke-width="1.4" stroke-dasharray="6 4"/>
+          <text x="455" y="30" class="s" font-size="12" fill="#3c6440" text-anchor="middle" font-weight="700">forEachConcurrent</text>
+          <g class="m" font-size="12">
+            <rect x="346" y="50" width="218" height="34" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.2"/>
+            <text x="455" y="72" fill="#2b2420" text-anchor="middle">getCommentCount(1) → 3</text>
+            <rect x="346" y="120" width="218" height="34" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.2"/>
+            <text x="455" y="142" fill="#2b2420" text-anchor="middle">getCommentCount(2) → 1</text>
+          </g>
+          <text x="455" y="104" class="s" font-size="11.5" fill="#9a7d3a" text-anchor="middle" font-style="italic">post 2 glitches → retry heals it</text>
+          <path d="M290 100 L344 67" stroke="#4f7a52" stroke-width="1.5" fill="none" marker-end="url(#ag7)"/>
+          <path d="M290 110 L344 137" stroke="#4f7a52" stroke-width="1.5" fill="none" marker-end="url(#ag7)"/>
+
+          <path d="M580 105 L612 105" stroke="#c0552b" stroke-width="1.6" fill="none" marker-end="url(#a7)"/>
+          <g class="m" font-size="11.5">
+            <rect x="614" y="84" width="92" height="42" rx="9" fill="#fbf1dc" stroke="#c79334" stroke-width="1.3"/>
+            <text x="660" y="101" fill="#86643a" text-anchor="middle">Post</text>
+            <text x="660" y="117" fill="#86643a" text-anchor="middle">WithCount[]</text>
+          </g>
+          <defs>
+            <marker id="a7" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#c0552b"/></marker>
+            <marker id="ag7" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#4f7a52"/></marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption>Sequential where it must be (you need the user before the posts), concurrent where it can be (the comment counts have no dependency on each other).</figcaption>
+    </figure>
+
+    <h2>The client, provided once</h2>
+    <p>Here's a fake in-memory client. Swap it for one built on <code>tryPromise(() =&gt; fetch(...))</code>
+      and nothing in the logic above changes. <code>retry</code> sits at the source, so any layer that
+      calls <code>get</code> inherits it:</p>
+    <pre><code class="language-typescript">const HttpLive: Http = {
+  get: &lt;T&gt;(url: string) =&gt;
+    pipe(
+      flatMap(sleep(40), (): Effect&lt;T, NotFoundError | NetworkError&gt; =&gt; {
+        if (url === "/posts/2/comments" &amp;&amp; glitches &lt; 2) {  // a transient glitch, on purpose
+          glitches++
+          return fail(network(`temporary glitch on ${url}`))
+        }
+        const body = DATA[url]
+        return body === undefined ? fail(notFound(url)) : succeed(body as T)
+      }),
+      retry({ times: 3, while: (e) =&gt; e._tag === "Network" }) // retry network errors only
+    ),
+}</code></pre>
+
+    <h2>Compose and run</h2>
+    <p>Every line is an operator on a value. Nothing executes until <code>runPromise</code>:</p>
+    <pre><code class="language-typescript">// the annotation says "no errors remain". that's what forces us to handle every
+// case below: drop the Timeout handler and TimeoutError stays in the channel, no
+// longer matches `never`, and this line stops compiling.
+const program: Effect&lt;PostWithCount[] | string, never, never&gt; = pipe(
+  loadUserPosts(1),
+  timeout(2000),                                       // built-in; adds TimeoutError to the type
+  tap((posts) =&gt; sync(() =&gt; console.log(`loaded ${posts.length} posts`))),
+  // catchTags is the one combinator we left data-first (2.6), so we hand it `self`
+  (self) =&gt; catchTags(self, {
+    NotFound: (e) =&gt; sync(() =&gt; `not found: ${e.url}`),
+    Network:  (e) =&gt; sync(() =&gt; `network: ${e.message}`),
+    Timeout:  (e) =&gt; sync(() =&gt; `timed out after ${e.ms}ms`),
+  }),
+  provide(Http, HttpLive),                             // satisfy the dependency, at the edge
+)
+
+runPromise(program).then((result) =&gt; console.log("result:", result))</code></pre>
+
+    <p>The output shows the retry healing the glitch, then the result:</p>
+    <pre><code class="language-text">  ↻ /posts/2/comments glitched (attempt 1) — retry will heal it
+  ↻ /posts/2/comments glitched (attempt 2) — retry will heal it
+loaded 2 posts
+result: [
+  { post: { id: 1, title: "On computation" }, comments: 3 },
+  { post: { id: 2, title: "On the Analytical Engine" }, comments: 1 },
+]</code></pre>
+
+    <p>What the types force here, and what they don't — worth being precise, because it's easy to
+      overstate. <strong>Dependencies are enforced:</strong> <code>provide</code> has to bring
+      <code>R</code> to <code>never</code>, or the runners won't accept the program. <strong>Errors are
+      not</strong> — <code>runPromise</code> (like real Effect's) will take an effect with leftover
+      errors and just reject the promise if one happens. What makes you handle every case is the
+      <strong>annotation</strong>: by declaring <code>program</code> as
+      <code>Effect&lt;…, never, never&gt;</code> you ask the compiler to hold you to "no errors left."
+      <code>timeout</code> added <code>TimeoutError</code>, so deleting its handler leaves an error that
+      no longer matches <code>never</code> — and it stops compiling. Drop the annotation and it compiles
+      fine, unhandled error and all. Handling everything is something you opt into by committing to an
+      empty error channel.</p>
+
+    <hr/>
+
+    <h2>Recap</h2>
+    <p>Part 1 started with a claim: an Effect is a description, not a running program. Seven sections
+      later, you've built it and used it to write the program above:</p>
+
+    <div class="callout key">
+      <span class="tag">What an Effect is</span>
+      <ul style="margin:0">
+        <li>An Effect is a <strong>tree of tagged nodes</strong> (<code>succeed</code>,
+          <code>flatMap</code>, <code>async</code>, <code>service</code>, …).</li>
+        <li>A <strong>fiber</strong> is a loop with registers and a stack that walks the tree.</li>
+        <li><strong>Sequencing</strong> is a stack of postponed steps. <strong>Failure</strong> is a
+          flag that throws away the success steps until it reaches a handler. <strong>Async</strong> is
+          the loop returning out of itself and being called again later.
+          <strong>Dependencies</strong> are a context register. <strong>Concurrency</strong> is more
+          than one fiber.</li>
+        <li><strong>Everything else</strong> — <code>map</code>, <code>tap</code>, <code>retry</code>,
+          <code>timeout</code>, <code>catchTags</code>, <code>forEachConcurrent</code> — is built from
+          that same handful of primitives.</li>
+        <li><strong>pipe / dual</strong> are sugar on top, gone before anything runs.</li>
+      </ul>
+    </div>
+
+    <p class="takeaway">That's all Effect is underneath: a data structure, and a loop that walks it.
+      The program above is built from nothing more.</p>
+
+    <div class="pager">
+      <a class="prev" href="part-2-6.html"><div class="dir">← 2.6</div><div class="ttl">Ergonomics</div></a>
+      <a class="next" href="index.html"><div class="dir">Back to start →</div><div class="ttl">Home</div></a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>The Comprehensive Guide to Effect</span>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="sp"></span>
+    <span class="love">with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">obada</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

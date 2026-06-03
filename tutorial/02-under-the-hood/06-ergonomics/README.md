@@ -101,20 +101,11 @@ This is exactly how the real library works. Every pipeable Effect combinator is 
 `dual` helper that counts arguments, and `import { pipe } from "effect"` is the same left-to-right
 applier (real Effect also exposes `effect.pipe(...)` as a method, which does the same thing). None of
 it is runtime machinery. It's the seam between "code that's pleasant to write" and "the data structure
-the interpreter walks" — and that seam is the right note to end on.
+the interpreter walks".
 
-## The whole tutorial, in one breath
+That's the whole runtime. Six sections in, an Effect is a tree of tagged nodes and a loop that walks
+it — and the loop can sequence, fail, pause, carry dependencies, and run many at once. The last
+section puts all of it to work on a real program.
 
-You started with a claim: an Effect is a description, not a running program. Six parts later, that's
-not a claim — it's something you built:
-
-- An Effect is a **tree of tagged nodes** (`succeed`, `flatMap`, `async`, `service`, ...).
-- A **fiber** is a loop with registers and a stack that walks the tree.
-- **Sequencing** is a stack of postponed steps. **Failure** is a flag that throws away the success
-  steps until it reaches a handler. **Async** is the loop returning out of itself and being called
-  again later. **Dependencies** are a context register. **Concurrency** is more than one fiber.
-  **Everything fancy** — `map`, `tap`, `retry`, `timeout`, `catchTags`, `forEachConcurrent` — is built
-  from the same handful of primitives.
-- And **pipe/dual** are sugar on top, gone before anything runs.
-
-That's Effect. Not magic — mechanics.
+Next: [`07-real-world/`](../07-real-world/) — a real concurrent, retrying, dependency-injected
+program, built entirely from what you have.

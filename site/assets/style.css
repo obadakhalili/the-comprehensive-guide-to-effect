@@ -600,7 +600,31 @@ main h3[id] { scroll-margin-top: 84px; }
 .site-footer .love { color: var(--muted); }
 .site-footer .love .heart { color: var(--terra); }
 
-/* section pills (2.1–2.6 quick nav) */
+/* tables (used in the capstone "needs → built in" map) */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.6em auto;
+  font-size: 16px;
+}
+.prose table th, .prose table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.prose table th {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.prose table td:last-child { color: var(--ink-soft); white-space: nowrap; }
+.prose table tr:last-child td { border-bottom: 0; }
+
+/* section pills (2.1–2.7 quick nav) */
 .secpills { display: flex; flex-wrap: wrap; gap: 7px; margin: 1.4em auto 0; max-width: var(--readw); }
 .secpills a {
   font-family: var(--mono); font-size: 12.5px; font-weight: 600;

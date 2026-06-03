@@ -8,8 +8,8 @@ A static, multi-page HTML article. No build step, no framework. Drop the folder 
 |---|---|
 | `index.html` | Landing — banner, overview, links to both parts |
 | `part-1.html` | Part 1 — What is Effect (the *why*) |
-| `part-2.html` | Part 2 — overview + index into the six sections |
-| `part-2-1.html` … `part-2-6.html` | Sections 2.1–2.6 |
+| `part-2.html` | Part 2 — overview + index into the seven sections |
+| `part-2-1.html` … `part-2-7.html` | Sections 2.1–2.7 (2.7 is the capstone) |
 
 `assets/style.css` is the theme. `assets/site.js` runs syntax highlighting and the interactive
 trace steppers (2.1 and 2.4). Fonts come from Google Fonts; syntax highlighting from the

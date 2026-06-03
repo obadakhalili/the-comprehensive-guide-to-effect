@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <title>Part 2 — How Effect works under the hood · The Comprehensive Guide to Effect</title>
-<meta name="description" content="Rebuild a working version of Effect from scratch in six small sections: foundations, async, context, errors, concurrency, and ergonomics. By the end, an Effect is obviously just a data structure a loop walks." />
+<meta name="description" content="Rebuild a working version of Effect from scratch in six sections — foundations, async, context, errors, concurrency, ergonomics — then use it to build a real concurrent, retrying, dependency-injected program." />
 <link rel="canonical" href="https://effect-guide.netlify.app/part-2.html" />
 <meta property="og:type" content="article" />
 <meta property="og:title" content="Part 2 — How Effect works under the hood" />
-<meta property="og:description" content="Rebuild Effect's runtime from scratch in six small sections." />
+<meta property="og:description" content="Rebuild Effect's runtime from scratch in six sections, then build a real program with it." />
 <meta property="og:url" content="https://effect-guide.netlify.app/part-2.html" />
 <meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -29,7 +29,7 @@
   "@type": "TechArticle",
   "headline": "Part 2 — How Effect works under the hood",
   "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
-  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "author": { "@type": "Person", "name": "obada" },
   "url": "https://effect-guide.netlify.app/part-2.html",
   "about": "Effect TypeScript library"
 }
@@ -76,9 +76,9 @@
 
     <div class="toc" data-toc></div>
 
-    <p>We rebuild a small, fully-typed version of Effect in <strong>six sections</strong>, numbered
-      2.1 to 2.6. Each one adds a little to the same engine, so the runtime builds up across the
-      sections:</p>
+    <p>We rebuild a small, fully-typed version of Effect across <strong>seven sections</strong>. The
+      first six (2.1–2.6) build the runtime, each adding to the same engine; the last (2.7) uses it to
+      write a real program:</p>
 
     <figure>
       <div class="figcard">
@@ -111,7 +111,7 @@
           </g>
         </svg>
       </div>
-      <figcaption>Cumulative. Each section is a folder of runnable code that extends the one below it. The base is the whole idea; everything above is more node types and a slightly bigger loop.</figcaption>
+      <figcaption>The six runtime sections, cumulative: each is a folder of runnable code that extends the one below it. Section 2.7 then uses the finished runtime to build a real program.</figcaption>
     </figure>
 
     <h2>One object, two views</h2>
@@ -148,7 +148,7 @@ type Primitive =
       Effect is built the same way. With that in mind, every section is just "add a node type, add a
       case to the loop."</p>
 
-    <h2>The six sections</h2>
+    <h2>The seven sections</h2>
 
     <div class="sec-list">
       <a class="sec-item" href="part-2-1.html">
@@ -199,6 +199,14 @@ type Primitive =
           <div class="methods">pipe · dual</div>
         </div>
       </a>
+      <a class="sec-item" href="part-2-7.html">
+        <span class="badge">2.7</span>
+        <div>
+          <h4>Putting it together</h4>
+          <p>The finale: a real concurrent, retrying, dependency-injected program, built entirely from the toy.</p>
+          <div class="methods">a capstone — no new runtime</div>
+        </div>
+      </a>
     </div>
 
     <div class="callout real">
@@ -220,7 +228,7 @@ type Primitive =
     <span>The Comprehensive Guide to Effect</span>
     <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
     <span class="sp"></span>
-    <span class="love">Made with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">Obada Khalili</a></span>
+    <span class="love">with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">obada</a></span>
   </div>
 </footer>
 

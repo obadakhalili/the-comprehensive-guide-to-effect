@@ -29,7 +29,7 @@
   "@type": "TechArticle",
   "headline": "2.6 Ergonomics — pipe and dual",
   "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
-  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "author": { "@type": "Person", "name": "obada" },
   "url": "https://effect-guide.netlify.app/part-2-6.html",
   "about": "Effect TypeScript library"
 }
@@ -59,7 +59,7 @@
   <div class="wrap prose">
     <p class="crumbs"><a href="index.html">Home</a> / <a href="part-2.html">Part 2</a> / 2.6 Ergonomics</p>
     <div class="secpills">
-      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a class="active" href="part-2-6.html">2.6</a>
+      <a href="part-2-1.html">2.1</a><a href="part-2-2.html">2.2</a><a href="part-2-3.html">2.3</a><a href="part-2-4.html">2.4</a><a href="part-2-5.html">2.5</a><a class="active" href="part-2-6.html">2.6</a><a href="part-2-7.html">2.7</a>
     </div>
 
     <p class="eyebrow" style="margin-top:1.4em">Section 2.6</p>
@@ -179,35 +179,13 @@
         while you build the effect, and is gone by the time the interpreter walks it.</p>
     </div>
 
-    <hr/>
-
-    <h2>Recap</h2>
-    <p>Part 1 started with a claim: an Effect is a description, not a running program. Six sections
-      later, you've built the thing that makes it true:</p>
-
-    <div class="callout key">
-      <span class="tag">What an Effect is</span>
-      <ul style="margin:0">
-        <li>An Effect is a <strong>tree of tagged nodes</strong> (<code>succeed</code>,
-          <code>flatMap</code>, <code>async</code>, <code>service</code>, …).</li>
-        <li>A <strong>fiber</strong> is a loop with registers and a stack that walks the tree.</li>
-        <li><strong>Sequencing</strong> is a stack of postponed steps. <strong>Failure</strong> is a
-          flag that throws away the success steps until it reaches a handler. <strong>Async</strong> is
-          the loop returning out of itself and being called again later.
-          <strong>Dependencies</strong> are a context register. <strong>Concurrency</strong> is more
-          than one fiber.</li>
-        <li><strong>Everything fancy</strong> — <code>map</code>, <code>tap</code>, <code>retry</code>,
-          <code>timeout</code>, <code>catchTags</code>, <code>forEachConcurrent</code> — is built from
-          that same handful of primitives.</li>
-        <li>And <strong>pipe / dual</strong> are sugar on top, gone before anything runs.</li>
-      </ul>
-    </div>
-
-    <p class="takeaway">That's all Effect is underneath: a data structure, and a loop that walks it.</p>
+    <p>That's the whole runtime. Six sections in, an Effect is a tree of tagged nodes and a loop that
+      walks it — and the loop can sequence, fail, pause, carry dependencies, and run many at once. The
+      last section puts all of it to work on a real program.</p>
 
     <div class="pager">
       <a class="prev" href="part-2-5.html"><div class="dir">← 2.5</div><div class="ttl">Concurrency</div></a>
-      <a class="next" href="index.html"><div class="dir">Back to start →</div><div class="ttl">Home</div></a>
+      <a class="next" href="part-2-7.html"><div class="dir">Section 2.7 →</div><div class="ttl">Putting it together</div></a>
     </div>
   </div>
 </main>
@@ -217,7 +195,7 @@
     <span>The Comprehensive Guide to Effect</span>
     <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
     <span class="sp"></span>
-    <span class="love">Made with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">Obada Khalili</a></span>
+    <span class="love">with <span class="heart">♥</span> by <a href="https://x.com/obadakhalili" target="_blank" rel="noopener">obada</a></span>
   </div>
 </footer>
 

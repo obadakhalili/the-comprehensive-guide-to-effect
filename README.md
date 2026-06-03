@@ -6,7 +6,8 @@ works under the hood. There's a polished article version at **https://effect-gui
 ## What's here
 
 - `tutorial/01-what-is-effect/` — **Part 1**: why Effect exists, using the real `effect` library.
-- `tutorial/02-under-the-hood/` — **Part 2**: a small Effect runtime rebuilt from scratch in six steps.
+- `tutorial/02-under-the-hood/` — **Part 2**: a small Effect runtime rebuilt from scratch in six steps,
+  then used to build a real program.
 - `site/` — the static HTML article version of the tutorial.
 
 ## Start here

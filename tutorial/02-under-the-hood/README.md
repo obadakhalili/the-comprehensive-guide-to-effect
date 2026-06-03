@@ -1,15 +1,18 @@
 # Part 2 — How Effect works under the hood
 
-We build our own tiny Effect, one concept at a time. Part 2 is split into six **sections**, numbered
-2.1 to 2.6. Each section is a folder with three files:
+We build our own tiny Effect, one concept at a time. Part 2 is split into seven **sections**, numbered
+2.1 to 2.7. The first six build the runtime; the last (2.7) uses it to write a real program. Each
+section is a folder with three files:
 
 - `runtime.ts` — our toy Effect, built up to this point. You can run it on its own; each section's
-  copy includes everything from the sections before it.
+  copy includes everything from the sections before it. (2.7 adds no runtime — its `runtime.ts` just
+  re-exports 2.6's.)
 - `example.ts` — a small program that uses the new methods this section adds. Run it with `bun`.
 - `README.md` — the explainer: why the concept exists, how the runtime handles it, and where it maps
   in the real Effect source.
 
-Read the sections in order. Each one adds to the runtime from the section before it.
+Read the sections in order. The first six each add to the runtime from the section before it; the last
+puts the whole thing to work.
 
 | Section | Adds | The idea |
 |------|------|----------|
@@ -19,6 +22,7 @@ Read the sections in order. Each one adds to the runtime from the section before
 | [2.4 — errors](./04-errors/) | `catchAll` `catchTags` `retry` | a failure flag that throws away the success steps until it reaches a handler |
 | [2.5 — concurrency](./05-concurrency/) | `fork` `raceFirst` `forEachConcurrent` | many fibers at once; interrupting the ones you no longer need |
 | [2.6 — ergonomics](./06-ergonomics/) | `pipe` `dual` | source-level sugar that's gone before the runtime runs |
+| [2.7 — real-world](./07-real-world/) | *(nothing new)* | a real concurrent, retrying, dependency-injected program built from everything above |
 
 Two representations to keep in mind the whole way through:
 
