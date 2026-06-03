@@ -32,7 +32,77 @@
   --readw: 720px;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(43,36,32,.05), 0 8px 30px rgba(43,36,32,.07);
+
+  color-scheme: light;
 }
+
+/* ---------------------------------------------------------- dark theme ---
+   A complement to the light editorial theme, not a different design:
+   the same terracotta accent and warm tone, on espresso-dark surfaces.
+   Hand-drawn diagram cards (.figcard) and the hero banner stay on warm
+   light paper — the SVGs are drawn against it — so they read as inset
+   illustration cards on the dark page. */
+[data-theme="dark"] {
+  --paper:      #1b1815;
+  --paper-2:    #242019;
+  --paper-3:    #2c2722;
+  --ink:        #ece3d6;
+  --ink-soft:   #c8bcab;
+  --muted:      #998c7b;
+  --line:       rgba(236, 227, 214, 0.14);
+  --line-2:     rgba(236, 227, 214, 0.07);
+
+  --terra:      #d06a3f;
+  --terra-dk:   #e6976f;   /* links & accents — lifted for the dark surface */
+  --amber:      #e3a851;
+  --green:      #84ac68;
+  --green-dk:   #9dc282;
+  --brick:      #cd6f5b;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.30), 0 10px 34px rgba(0,0,0,.40);
+
+  color-scheme: dark;
+}
+
+/* surfaces that carry a hardcoded light fill → dark equivalents */
+[data-theme="dark"] .site-header { background: rgba(27, 24, 21, .82); }
+[data-theme="dark"] pre { border-color: rgba(255,255,255,.08); }
+[data-theme="dark"] .part-card,
+[data-theme="dark"] .sec-item,
+[data-theme="dark"] .pager a,
+[data-theme="dark"] .stepper { background: linear-gradient(180deg, #262119, #211d17); }
+[data-theme="dark"] .stepper-bar { background: rgba(255,255,255,.03); }
+[data-theme="dark"] .stepper-btn { background: #2c2722; color: var(--ink); }
+[data-theme="dark"] .secpills a,
+[data-theme="dark"] .repo-files a { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .callout.note { background: #2a2316; }
+[data-theme="dark"] .callout.real { background: #1f261c; }
+[data-theme="dark"] .callout.repo { background: #262019; }
+/* diagram cards + banner stay on warm paper (SVGs drawn for it), but
+   softened to a muted paper so they don't glare against the dark page */
+[data-theme="dark"] .figcard { background: linear-gradient(180deg, #f3ece0, #e8dece); border-color: rgba(0,0,0,.18); }
+[data-theme="dark"] .banner  { background: linear-gradient(180deg, #f4ebda, #e9dcc4); border-color: rgba(0,0,0,.18); }
+[data-theme="dark"] .banner .tagline { color: #2b2420; }
+
+/* smooth the switch on the surfaces that change */
+body, .site-header, .callout, .part-card, .sec-item, .toc,
+.pager a, .stepper, .secpills a, pre, .theme-toggle {
+  transition: background-color .2s ease, border-color .2s ease, color .15s ease;
+}
+
+/* theme toggle button */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 9px; padding: 0;
+  border: 1px solid var(--line); background: rgba(255,255,255,.45);
+  color: var(--ink-soft); cursor: pointer;
+}
+.theme-toggle:hover { border-color: var(--terra); color: var(--terra-dk); }
+.theme-toggle svg { width: 17px; height: 17px; }
+[data-theme="dark"] .theme-toggle { background: rgba(255,255,255,.05); }
+.theme-toggle .ic-sun { display: none; }
+[data-theme="dark"] .theme-toggle .ic-moon { display: none; }
+[data-theme="dark"] .theme-toggle .ic-sun { display: block; }
 
 * { box-sizing: border-box; }
 

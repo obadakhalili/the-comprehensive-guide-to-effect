@@ -10,6 +10,15 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   document.querySelectorAll("[data-stepper]").forEach(initStepper);
   document.querySelectorAll(".toc[data-toc]").forEach(buildToc);
+
+  const toggle = document.getElementById("themeToggle");
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) {}
+    });
+  }
 });
 
 // ---- "on this page" table of contents, built from the h2s ----
