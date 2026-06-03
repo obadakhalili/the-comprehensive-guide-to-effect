@@ -13,12 +13,26 @@
 <meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script defer src="assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "2.5 Concurrency — the Fiber",
+  "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
+  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "url": "https://effect-guide.netlify.app/part-2-5.html",
+  "about": "Effect TypeScript library"
+}
+</script>
 </head>
 <body>
 
@@ -31,6 +45,7 @@
     <nav class="nav">
       <a href="part-1.html">Part 1 · What is Effect</a>
       <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
     </nav>
   </div>
@@ -49,6 +64,19 @@
       strictly sequential. This section introduces the <strong>Fiber</strong>: one independent walk,
       and the ability to run several at once, wait on them, and cancel the ones you stop caring about.</p>
     <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: fork · raceFirst · forEachConcurrent · sleep · timeout</p>
+
+    <div class="callout repo">
+      <span class="tag">Follow along with the code</span>
+      <p style="margin:0">This section's runtime is self-contained. Read it, run <code>example.ts</code> with <code>bun</code>, and step through it with a debugger as you read.</p>
+      <div class="repo-files">
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/tree/main/tutorial/02-under-the-hood/05-concurrency" target="_blank" rel="noopener"><svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> 05-concurrency/</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/02-under-the-hood/05-concurrency/runtime.ts" target="_blank" rel="noopener">runtime.ts</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/02-under-the-hood/05-concurrency/example.ts" target="_blank" rel="noopener">example.ts</a>
+      </div>
+    </div>
+
+    <div class="toc" data-toc></div>
+
 
     <figure>
       <div class="figcard">
@@ -99,11 +127,13 @@
   queueMicrotask(() =&gt; child.step())  // run it independently, soon
   this.value = child                  // hand back the handle, right now
 }</code></pre>
-    <p><code>fork</code> makes a new <code>FiberRuntime</code>, schedules it to run on its own, and gives
-      the parent a <strong>handle</strong> to it immediately, without waiting. The parent keeps going.
-      <code>fork</code> alone just starts something; everything useful is <strong>fork + wait</strong> —
-      and the waiting is an <code>Async</code> node that registers an observer on the fiber. A fiber
-      finishing is an async event, so we wait for it with the same machinery from
+    <p><code>fork</code> does three things: it makes a new fiber for <code>self</code>, starts it
+      running on its own, and right away hands the parent a <strong>handle</strong> to that fiber as
+      the value — without waiting for it to finish. So the parent keeps going while the child runs.</p>
+    <p>On its own, <code>fork</code> only starts work. To use the result you fork, then wait for it.
+      Waiting is just an <code>Async</code> node that adds an observer to the child; when the child
+      finishes, it notifies its observers, which resumes the parent. "The child finished" is an event
+      that arrives later — so waiting on a fiber uses the exact same pause/resume machinery from
       <a href="part-2-2.html">2.2</a>.</p>
 
     <h2>raceFirst: fork both, take the first, interrupt the loser</h2>
@@ -204,10 +234,11 @@ interrupt() {
 <footer class="site-footer">
   <div class="inner">
     <span>The Comprehensive Guide to Effect</span>
+    <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
     <span class="sp"></span>
-    <a href="index.html">Home</a>
-    <a href="part-2.html">Part 2 index</a>
-    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="love">Made with <span class="heart">♥</span> by Obada Khalili</span>
   </div>
 </footer>
 

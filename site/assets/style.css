@@ -365,7 +365,8 @@ figcaption {
 }
 .part-card h3 { margin: .25em 0 .35em; font-size: 25px; }
 .part-card p { margin: 0; color: var(--ink-soft); font-size: 16px; }
-.part-card .go { margin-top: 16px; font-weight: 600; color: var(--terra-dk); font-size: 15px; display: inline-flex; gap: 6px; align-items: center; }
+.part-card { display: flex; flex-direction: column; }
+.part-card .go { margin-top: auto; padding-top: 16px; font-weight: 600; color: var(--terra-dk); font-size: 15px; display: inline-flex; gap: 6px; align-items: center; }
 .part-card:hover .go .arr { transform: translateX(4px); }
 .part-card .go .arr { transition: transform .15s; }
 
@@ -492,6 +493,42 @@ figcaption {
 .crumbs { font-family: var(--mono); font-size: 13px; color: var(--muted); padding-top: 36px; }
 .crumbs a { color: var(--muted); }
 .crumbs a:hover { color: var(--terra-dk); }
+
+/* table of contents */
+main h2 { scroll-margin-top: 84px; }
+main h3[id] { scroll-margin-top: 84px; }
+.toc {
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  border-radius: 12px;
+  padding: 16px 22px;
+  margin: 1.8em auto;
+  max-width: var(--readw);
+  font-size: 15.5px;
+}
+.toc-title { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.toc ol { margin: 0; padding-left: 1.3em; }
+.toc li { margin: .25em 0; }
+.toc a { color: var(--ink-soft); }
+.toc a:hover { color: var(--terra-dk); }
+
+/* follow-along (repo) callout */
+.callout.repo { border-left: 4px solid var(--ink); background: #f1ece2; }
+.callout.repo .tag { color: var(--ink); }
+.repo-files { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.repo-files a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 13px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+  border-radius: 7px; padding: 4px 11px;
+}
+.repo-files a:hover { text-decoration: none; border-color: var(--terra); color: var(--terra-dk); }
+.repo-files a .gh { width: 14px; height: 14px; opacity: .7; }
+
+/* footer extras */
+.site-footer a { color: var(--ink-soft); }
+.site-footer .love { color: var(--muted); }
+.site-footer .love .heart { color: var(--terra); }
 
 /* section pills (2.1–2.6 quick nav) */
 .secpills { display: flex; flex-wrap: wrap; gap: 7px; margin: 1.4em auto 0; max-width: var(--readw); }

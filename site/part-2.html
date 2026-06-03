@@ -13,12 +13,26 @@
 <meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script defer src="assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Part 2 — How Effect works under the hood",
+  "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
+  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "url": "https://effect-guide.netlify.app/part-2.html",
+  "about": "Effect TypeScript library"
+}
+</script>
 </head>
 <body>
 
@@ -31,6 +45,7 @@
     <nav class="nav">
       <a href="part-1.html">Part 1 · What is Effect</a>
       <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
     </nav>
   </div>
@@ -44,6 +59,18 @@
     <p class="lead">Part 1 ended on one claim: an Effect is a description, not a running program. Now
       we make that literal — we build the description, and we build the loop that walks it. By the end,
       nothing about Effect is a black box.</p>
+
+    <div class="callout repo">
+      <span class="tag">Follow along with the code</span>
+      <p style="margin:0">Part 2 builds a small Effect runtime from scratch. Each section is a folder
+        with a self-contained <code>runtime.ts</code> and a runnable <code>example.ts</code> — read
+        them, run them with <code>bun</code>, and step through them with a debugger as you read.</p>
+      <div class="repo-files">
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/tree/main/tutorial/02-under-the-hood" target="_blank" rel="noopener"><svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> tutorial/02-under-the-hood/</a>
+      </div>
+    </div>
+
+    <div class="toc" data-toc></div>
 
     <p>We rebuild a small, fully-typed version of Effect in <strong>six sections</strong>, numbered
       2.1 to 2.6. Each one adds a little to the same engine, so the runtime grows in front of you:</p>
@@ -82,22 +109,27 @@
       <figcaption>Cumulative. Each section is a folder of runnable code that extends the one below it. The base is the whole idea; everything above is more node types and a slightly bigger loop.</figcaption>
     </figure>
 
-    <h2>The shape of the trick</h2>
-    <p>Before the sections, the one structural idea that makes all of this work. An <code>Effect</code>
-      wears two faces:</p>
+    <h2>One object, two views</h2>
+    <p>One structural idea makes all of this work, so it's worth getting straight up front.</p>
+    <p>To you, an <code>Effect</code> is an abstract type. You only care about three things about it:
+      the value it produces, how it can fail, and what it needs — <code>A</code>, <code>E</code>,
+      <code>R</code>. At runtime, the same value is a plain object with an <code>_op</code> tag and
+      whatever fields the interpreter needs to run that node. The constructors build the object and
+      label it as an <code>Effect&lt;A, E, R&gt;</code>; the interpreter reads it back as a tagged
+      node, casting between the two views.</p>
 
     <div class="compare">
       <div class="pane good">
-        <div class="pane-head"><span class="dot"></span>What you see — the public type</div>
-        <pre><code class="language-typescript">// opaque. carries only A, E, R.
-// deliberately empty so inference stays clean.
+        <div class="pane-head"><span class="dot"></span>What you write against — the abstract type</div>
+        <pre><code class="language-typescript">// carries only A, E, R.
+// no fields, so inference stays clean.
 interface Effect&lt;out A, out E, out R&gt; {
   readonly _op: string
 }</code></pre>
       </div>
       <div class="pane good">
-        <div class="pane-head"><span class="dot"></span>What the loop sees — a tagged node</div>
-        <pre><code class="language-typescript">// a plain object with an _op tag the runtime reads.
+        <div class="pane-head"><span class="dot"></span>What the interpreter reads — a tagged object</div>
+        <pre><code class="language-typescript">// _op says which node; the rest is what running it needs.
 type Primitive =
   | { _op: "Succeed";   value: unknown }
   | { _op: "Failure";   error: unknown }
@@ -107,11 +139,9 @@ type Primitive =
       </div>
     </div>
 
-    <p>It's <em>one object</em>. The constructors build a tagged <code>Primitive</code> and cast it to
-      <code>Effect&lt;A, E, R&gt;</code>; the runtime casts back and reads <code>_op</code>. So the
-      surface is fully typed, while the core works on loosely-typed nodes with a few localized casts.
-      <strong>That's how real Effect is built too</strong> — a typed API over an interpreter. Keep this
-      in mind and every section is just "add a node, add a case to the loop."</p>
+    <p>So the surface stays fully typed while the interpreter works on plain tagged objects. Real
+      Effect is built the same way. With that in mind, every section is just "add a node type, add a
+      case to the loop."</p>
 
     <h2>The six sections</h2>
 
@@ -183,10 +213,11 @@ type Primitive =
 <footer class="site-footer">
   <div class="inner">
     <span>The Comprehensive Guide to Effect</span>
+    <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
     <span class="sp"></span>
-    <a href="index.html">Home</a>
-    <a href="part-1.html">Part 1</a>
-    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="love">Made with <span class="heart">♥</span> by Obada Khalili</span>
   </div>
 </footer>
 

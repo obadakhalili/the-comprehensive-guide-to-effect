@@ -13,12 +13,26 @@
 <meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script defer src="assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "2.4 Error handling",
+  "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
+  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "url": "https://effect-guide.netlify.app/part-2-4.html",
+  "about": "Effect TypeScript library"
+}
+</script>
 </head>
 <body>
 
@@ -31,6 +45,7 @@
     <nav class="nav">
       <a href="part-1.html">Part 1 · What is Effect</a>
       <a class="active" href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
     </nav>
   </div>
@@ -50,6 +65,19 @@
       that <code>catchTags</code> and <code>retry</code> are both just that node, used cleverly.</p>
     <p style="color:var(--muted);font-family:var(--mono);font-size:14px">Methods: catchAll · catchTags · retry</p>
 
+    <div class="callout repo">
+      <span class="tag">Follow along with the code</span>
+      <p style="margin:0">This section's runtime is self-contained. Read it, run <code>example.ts</code> with <code>bun</code>, and step through it with a debugger as you read.</p>
+      <div class="repo-files">
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/tree/main/tutorial/02-under-the-hood/04-errors" target="_blank" rel="noopener"><svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> 04-errors/</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/02-under-the-hood/04-errors/runtime.ts" target="_blank" rel="noopener">runtime.ts</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/02-under-the-hood/04-errors/example.ts" target="_blank" rel="noopener">example.ts</a>
+      </div>
+    </div>
+
+    <div class="toc" data-toc></div>
+
+
     <h2>Why this exists: failure has to land somewhere</h2>
     <p>Part 1 sold the idea of handling failure "at the edge." This is the machine that does it. Without
       it, a typed error is only ever fatal. With it, you recover — turn a <code>NotFound</code> into a
@@ -60,10 +88,15 @@
     <p><code>catchAll</code> builds an <code>OnFailure</code> node holding <code>self</code> and a
       handler <code>g</code>. If <code>self</code> fails, <code>g</code> runs with the error and returns
       the next effect. If <code>self</code> succeeds, <code>g</code> is skipped entirely.</p>
-    <pre><code class="language-typescript">catchAll(self, g) : Effect&lt;A | B, E2, R | R2&gt;
-//   the error channel goes E → E2: the original E is gone, g received it.
-//   g returns succeed → you recovered (E2 may be never)
-//   g returns fail    → a new error, like rethrowing</code></pre>
+    <pre><code class="language-typescript">const recovered = catchAll(
+  fail("boom"),                          // self: fails with "boom"
+  (e) =&gt; succeed(`recovered from ${e}`)  // g: gets the error, returns the next effect
+)
+// recovered runs to Success("recovered from boom")</code></pre>
+    <p><code>catchAll</code> turns a failing effect into whatever <code>g</code> returns. If
+      <code>g</code> returns a <code>succeed</code>, the failure is gone — you've recovered. If
+      <code>g</code> returns a <code>fail</code>, that's a new error, like rethrowing. Either way the
+      original error has been dealt with; it doesn't keep propagating on its own.</p>
 
     <h2>How the runtime catches it</h2>
     <p><code>OnFailure</code> is the mirror of <code>OnSuccess</code>. The catching happens in the
@@ -80,8 +113,18 @@ if ( inFailure &amp;&amp; frame._op === "OnFailure") { current = frame.g(failure
         is thrown away until a handler is found.</p>
     </div>
 
-    <p>Step through a failure buried three levels deep. Watch it fall past every success step, untouched,
-      until it reaches the handler:</p>
+    <p>Here's a failure buried two steps deep, wrapped in a <code>catchAll</code>. It reads inside-out
+      for now (<code>pipe</code> arrives in 2.6) — the <code>fail</code> is the deepest node, with two
+      <code>flatMap</code> steps stacked above it:</p>
+    <pre><code class="language-typescript">const program = catchAll(
+  flatMap(
+    flatMap(fail("boom"), (x) =&gt; succeed(x + 1)),  // f2 — never runs
+    (x) =&gt; succeed(x * 2)                          // f1 — never runs
+  ),
+  (e) =&gt; succeed(`recovered from ${e}`)            // g  — the handler
+)</code></pre>
+    <p>Step through it. Watch the failure fall past every success step, untouched, until it reaches
+      the handler:</p>
 
     <div class="stepper" data-stepper>
       <script type="application/json">
@@ -137,21 +180,13 @@ if ( inFailure &amp;&amp; frame._op === "OnFailure") { current = frame.g(failure
         guarded lookup — it checks for a <code>_tag</code> before dispatching, so an error without one
         passes through. Real <code>retry</code> is more general (it takes a <code>Schedule</code> —
         delays, backoff, limits) but at its core it's the same recover-and-rerun loop.</p>
-      <p style="margin-bottom:0"><strong>One design note (not a simplification) and one that is:</strong></p>
-      <ol style="margin-bottom:0">
-        <li><strong>Exit is one-or-the-other, on purpose.</strong> <code>Exit</code> is a tagged union —
-          <code>Success</code> with a value, or <code>Failure</code> with an error, never both. A flat
-          object with an <code>ok</code> flag plus both fields could represent "succeeded but also
-          carries an error" — a nonsense state. The tagged union makes that impossible. Real Effect's
-          <code>Exit</code> is exactly this shape; making illegal states unrepresentable is a move
-          Effect leans on everywhere.</li>
-        <li><strong>We collapse the Cause.</strong> This one <em>is</em> a simplification. Real Effect
-          wraps your error in a <code>Cause</code> that distinguishes a typed failure (<code>Fail</code>)
-          from a defect (<code>Die</code> — an unexpected throw) from an interruption
-          (<code>Interrupt</code>). Real <code>catchAll</code> catches only <code>Fail</code>. Our single
-          error slot can't tell them apart. That <code>Cause</code> layer is what we traded for
-          simplicity.</li>
-      </ol>
+      <p style="margin-bottom:0"><strong>One simplification:</strong> we collapse the
+        <code>Cause</code>. Real Effect doesn't put your raw error in the failure slot — it wraps it in
+        a <code>Cause</code> that distinguishes a typed failure (<code>Fail</code>) from a defect
+        (<code>Die</code> — an unexpected throw) from an interruption (<code>Interrupt</code>). Real
+        <code>catchAll</code> catches only <code>Fail</code>. Our single error slot can't tell them
+        apart, so it would catch all of them. That <code>Cause</code> layer is what we traded for
+        simplicity.</p>
     </div>
 
     <div class="pager">
@@ -164,10 +199,11 @@ if ( inFailure &amp;&amp; frame._op === "OnFailure") { current = frame.g(failure
 <footer class="site-footer">
   <div class="inner">
     <span>The Comprehensive Guide to Effect</span>
+    <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
     <span class="sp"></span>
-    <a href="index.html">Home</a>
-    <a href="part-2.html">Part 2 index</a>
-    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="love">Made with <span class="heart">♥</span> by Obada Khalili</span>
   </div>
 </footer>
 

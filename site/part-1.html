@@ -13,12 +13,26 @@
 <meta property="og:image" content="https://effect-guide.netlify.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script defer src="assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Part 1 — What is Effect",
+  "isPartOf": { "@type": "Book", "name": "The Comprehensive Guide to Effect" },
+  "author": { "@type": "Person", "name": "Obada Khalili" },
+  "url": "https://effect-guide.netlify.app/part-1.html",
+  "about": "Effect TypeScript library"
+}
+</script>
 </head>
 <body>
 
@@ -31,6 +45,7 @@
     <nav class="nav">
       <a class="active" href="part-1.html">Part 1 · What is Effect</a>
       <a href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
     </nav>
   </div>
@@ -42,18 +57,35 @@
     <p class="eyebrow">Part 1 — The why</p>
     <h1 style="font-family:var(--serif);font-size:clamp(36px,5vw,52px);line-height:1.08;letter-spacing:-.02em;margin:.1em auto .3em;max-width:720px">What is Effect</h1>
     <p class="lead">Effect is a TypeScript library for building complex applications that stay
-      readable and reliable as they grow. Here's the one idea behind it, and the three concrete
-      problems it solves.</p>
+      readable and reliable as they grow. This part covers the one idea behind it, and three concrete
+      things that get better because of it.</p>
+
+    <div class="callout repo">
+      <span class="tag">Follow along with the code</span>
+      <p style="margin:0">Part 1 uses the real <code>effect</code> library. The runnable files are in
+        the repo — open them, run them, and step through them with a debugger as you read.</p>
+      <div class="repo-files">
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/tree/main/tutorial/01-what-is-effect" target="_blank" rel="noopener"><svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> tutorial/01-what-is-effect/</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/01-what-is-effect/01-errors-without-effect.ts" target="_blank" rel="noopener">errors · plain</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/01-what-is-effect/02-errors-with-effect.ts" target="_blank" rel="noopener">errors · effect</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/01-what-is-effect/03-deps-without-effect.ts" target="_blank" rel="noopener">deps · plain</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/01-what-is-effect/04-deps-with-effect.ts" target="_blank" rel="noopener">deps · effect</a>
+        <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect/blob/main/tutorial/01-what-is-effect/05-coloring.ts" target="_blank" rel="noopener">coloring</a>
+      </div>
+    </div>
+
+    <div class="toc" data-toc></div>
 
     <h2>The one-line answer</h2>
     <p>One idea runs through the whole library: <strong>use the type system to track errors and
       context, not just success values.</strong> A normal type tells you what a function returns when
       everything goes right. Effect's type tells you that, plus how it can fail, plus what it needs to
       run.</p>
-    <p>Those last two — how it fails, what it needs — are what a normal type leaves out, so they turn
-      into surprises. Async is a different story: it <em>is</em> in the type — <code>Promise&lt;string&gt;</code>
-      says "async" loud and clear — but that's its own problem, because the announcement spreads to
-      every caller. We get to that as Problem 3.</p>
+    <p>A normal type hides two of those three things: how it can fail, and what it needs. Both turn
+      into surprises — an exception you didn't expect, a dependency you forgot to wire up. The third,
+      async, is the opposite: a <code>Promise&lt;string&gt;</code> already shows up in the type. But
+      that visibility is its own problem — it forces every caller to become async too. We come back to
+      it as Problem 3.</p>
 
     <div class="callout key">
       <span class="tag">The shape</span>
@@ -98,10 +130,49 @@
     </figure>
 
     <h2>Problem 1 · Errors are invisible</h2>
-    <p>Look at <code>findUser</code>. Its signature is <code>(id: string) =&gt; User</code>. But it can
-      throw two different errors — <code>UserNotFound</code> and <code>DbError</code>. The signature
-      says nothing about them. Same for <code>getProfile</code> one layer up. So all the error
-      knowledge piles up in one <code>catch</code> block at the top:</p>
+    <p>Each layer can fail. <code>findUser</code> can throw <code>UserNotFound</code> or
+      <code>DbError</code>; <code>getProfile</code> above it just forwards whatever comes up. In plain
+      code none of that shows in the signatures — they only mention the success value:</p>
+
+    <div class="compare">
+      <div class="pane bad">
+        <div class="pane-head"><span class="dot"></span>Plain — the type says nothing about failure</div>
+        <pre><code class="language-typescript">// type says `User` — not "or throws"
+const findUser = (id: string): User =&gt; {
+  const row = db.query(id)              // may throw DbError
+  if (!row) throw new UserNotFound(id)  // may throw UserNotFound
+  return row
+}
+
+// forwards findUser's failures, still invisibly
+const getProfile = (id: string): Profile =&gt; {
+  const user = findUser(id)
+  return { name: user.name, email: user.email }
+}</code></pre>
+      </div>
+      <div class="pane good">
+        <div class="pane-head"><span class="dot"></span>Effect — each layer states how it fails</div>
+        <pre><code class="language-typescript">const findUser = (
+  id: string
+): Effect.Effect&lt;User, UserNotFound | DbError&gt; =&gt; ...
+
+const getProfile = (
+  id: string
+): Effect.Effect&lt;Profile, UserNotFound | DbError | ValidationError&gt; =&gt;
+  Effect.gen(function* () {
+    const user = yield* findUser(id)  // a User, or the failure propagates
+    return { name: user.name, email: user.email }
+  })</code></pre>
+      </div>
+    </div>
+
+    <p>On the left you only learn the failure modes by reading the bodies. On the right they're in the
+      type, and the body still reads as the happy path: <code>yield* findUser(id)</code> hands you a
+      <code>User</code> and moves on — if it failed, propagation happens on its own.</p>
+
+    <p>Because the plain types stay silent, all the error handling collapses into one
+      <code>catch</code> at the top, where the compiler can't check it. Effect handles each failure
+      once, at the edge, and the compiler <em>does</em> check it:</p>
 
     <div class="compare">
       <div class="pane bad">
@@ -121,44 +192,24 @@
 }</code></pre>
       </div>
       <div class="pane good">
-        <div class="pane-head"><span class="dot"></span>Effect — failures in the type</div>
-        <pre><code class="language-typescript">const getProfile = (
-  id: string
-): Effect.Effect&lt;Profile, UserNotFound | DbError | ValidationError&gt; =&gt;
-  Effect.gen(function* () {
-    const user = yield* findUser(id)
-    if (user.email === null)
-      return yield* Effect.fail(
-        new ValidationError({ reason: "no email" })
-      )
-    return { name: user.name, email: user.email }
+        <div class="pane-head"><span class="dot"></span>Effect — handled, and checked</div>
+        <pre><code class="language-typescript">getProfile(id).pipe(
+  Effect.map((p): HttpResponse =&gt;
+    ({ status: 200, body: JSON.stringify(p) })),
+  Effect.catchTags({
+    UserNotFound:    (e) =&gt; Effect.succeed({ status: 404, body: `no user ${e.id}` }),
+    ValidationError: (e) =&gt; Effect.succeed({ status: 422, body: e.reason }),
+    DbError:         ()  =&gt; Effect.succeed({ status: 500, body: "internal" }),
   })
-// read it as if it never fails. `yield*` gives you the
-// User and moves on; failure propagates on its own.</code></pre>
+)</code></pre>
       </div>
     </div>
 
-    <p>Two things are wrong on the left, and neither is your fault — the language just works this
-      way. <code>err</code> is <code>unknown</code>, so you're guessing. And nothing forces the list to
-      be complete: add a new error three layers down and this still compiles — the new error silently
-      becomes a 500.</p>
-
-    <p>On the right, every layer states its failures in the type, and you handle them once, at the
-      edge:</p>
-
-    <pre><code class="language-typescript">const handleGetProfile = (id: string): Effect.Effect&lt;HttpResponse&gt; =&gt;
-  getProfile(id).pipe(
-    Effect.map((profile): HttpResponse =&gt; ({ status: 200, body: JSON.stringify(profile) })),
-    Effect.catchTags({
-      UserNotFound:    (e) =&gt; Effect.succeed({ status: 404, body: `user ${e.id} not found` }),
-      ValidationError: (e) =&gt; Effect.succeed({ status: 422, body: e.reason }),
-      DbError:         ()  =&gt; Effect.succeed({ status: 500, body: "internal error" }),
-    })
-  )</code></pre>
-
-    <p>The return type's error slot is now empty (<code>never</code>) — every failure is handled. And
-      <code>catchTags</code> is checked: delete one handler and the unhandled error stays in the type,
-      so this stops compiling. You <em>can't</em> forget a case.</p>
+    <p>The Effect version's error slot ends up empty (<code>never</code>): every failure handled. And
+      <code>catchTags</code> is checked — delete a handler and the unhandled error stays in the type,
+      so it stops compiling. The plain <code>catch</code> can't do that: <code>err</code> is
+      <code>unknown</code>, and nothing forces the list to be complete. Add a new error three layers
+      down and it still compiles, silently becoming a 500.</p>
 
     <p class="takeaway">Write each layer as if it always succeeds. Handle every failure once, at the
       edge, with the compiler keeping the list complete.</p>
@@ -194,7 +245,7 @@
             <text x="600" y="96" class="s" font-size="11" fill="#9a9081" font-style="italic">no db</text>
             <rect x="420" y="114" width="240" height="34" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.3"/>
             <text x="434" y="136" fill="#4a3f37">yield* <tspan fill="#a9772a" font-weight="700">Database</tspan></text>
-            <text x="600" y="136" class="s" font-size="11" fill="#5c6b58" font-style="italic">pulls from context</text>
+            <text x="650" y="136" class="s" font-size="11" fill="#5c6b58" font-style="italic" text-anchor="end">asks for it</text>
           </g>
         </svg>
       </div>
@@ -253,58 +304,83 @@ handleGetProfile(id).pipe(
       once, where you run.</p>
 
     <h2>Problem 3 · Async coloring</h2>
-    <p>In plain JavaScript, <code>async</code> is contagious. The moment one function becomes async,
-      its caller has to become <code>async</code>, add an <code>await</code>, and return a
-      <code>Promise</code> — and then <em>their</em> caller has to do the same, all the way up. One
-      change, a ripple up the whole chain.</p>
-    <p>The reason is the type. A <code>Promise&lt;string&gt;</code> announces "I'm async," and that
-      announcement spreads to everyone who touches it.</p>
+    <p>In plain JavaScript, <code>async</code> is contagious. The moment <code>loadName</code> becomes
+      async, <code>greet</code> has to add <code>await</code> and become <code>async</code> too — and
+      so does every caller above it, all the way up. One change at the bottom, a ripple through the
+      whole chain.</p>
+
+    <div class="compare">
+      <div class="pane bad">
+        <div class="pane-head"><span class="dot"></span>Plain — sync version</div>
+        <pre><code class="language-typescript">const loadName = (id: string): string =&gt;
+  db.get(id)
+
+const greet = (id: string): string =&gt;
+  `hello, ${loadName(id)}`</code></pre>
+      </div>
+      <div class="pane bad">
+        <div class="pane-head"><span class="dot"></span>Plain — make loadName async</div>
+        <pre><code class="language-typescript">const loadName = (id: string): Promise&lt;string&gt; =&gt;   // now async
+  db.getAsync(id)
+
+const greet = async (id: string): Promise&lt;string&gt; =&gt; // forced async
+  `hello, ${await loadName(id)}`                       // forced await</code></pre>
+      </div>
+    </div>
+
+    <p>The reason is the type. <code>Promise&lt;string&gt;</code> is a different type from
+      <code>string</code>, so the change surfaces at every call site and has to be handled there.</p>
 
     <figure>
       <div class="figcard">
-        <svg viewBox="0 0 720 250" role="img" aria-label="async ripples up the chain in plain code but not in Effect">
+        <svg viewBox="0 0 720 205" role="img" aria-label="In plain code making loadName async forces greet and caller to change; in Effect they stay the same">
           <style>.m{font-family:"JetBrains Mono",monospace}.s{font-family:"Inter",sans-serif}</style>
-          <text x="180" y="20" class="s" font-size="14" font-weight="700" fill="#b14d3c" text-anchor="middle">Plain: one async, everyone changes</text>
-          <g class="m" font-size="12">
-            <rect x="60" y="34" width="240" height="36" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.3"/>
-            <text x="180" y="57" fill="#b14d3c" font-weight="700" text-anchor="middle">async greet → Promise</text>
-            <rect x="60" y="78" width="240" height="36" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.3"/>
-            <text x="180" y="101" fill="#b14d3c" font-weight="700" text-anchor="middle">async service → Promise</text>
-            <rect x="60" y="122" width="240" height="36" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.3"/>
-            <text x="180" y="145" fill="#b14d3c" font-weight="700" text-anchor="middle">async loadName ← made async</text>
+          <text x="170" y="20" class="s" font-size="13.5" font-weight="700" fill="#b14d3c" text-anchor="middle">Plain — the change spreads up</text>
+          <g class="m" font-size="12.5">
+            <rect x="50" y="32" width="240" height="34" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.3"/>
+            <text x="170" y="53" text-anchor="middle"><tspan fill="#4a3f37">caller()</tspan><tspan fill="#b14d3c" font-weight="700">  → now async</tspan></text>
+            <rect x="50" y="84" width="240" height="34" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.3"/>
+            <text x="170" y="105" text-anchor="middle"><tspan fill="#4a3f37">greet()</tspan><tspan fill="#b14d3c" font-weight="700">  → now async</tspan></text>
+            <rect x="50" y="136" width="240" height="34" rx="8" fill="#f6e9e6" stroke="#b14d3c" stroke-width="1.8"/>
+            <text x="170" y="157" text-anchor="middle"><tspan fill="#4a3f37">loadName()</tspan><tspan fill="#b14d3c" font-weight="700">  sync → async</tspan></text>
           </g>
-          <text x="180" y="182" class="s" font-size="12" fill="#9a6a60" font-style="italic" text-anchor="middle">change the bottom, repaint the whole column</text>
-          <path d="M180 122 L180 116" stroke="#b14d3c" stroke-width="2" marker-end="url(#up)"/>
-          <path d="M180 78 L180 72" stroke="#b14d3c" stroke-width="2" marker-end="url(#up)"/>
+          <path d="M170 136 L170 120" stroke="#b14d3c" stroke-width="2" fill="none" marker-end="url(#up)"/>
+          <path d="M170 84 L170 68" stroke="#b14d3c" stroke-width="2" fill="none" marker-end="url(#up)"/>
+          <text x="170" y="192" class="s" font-size="12" fill="#9a6a60" font-style="italic" text-anchor="middle">change the bottom one, the two above must change</text>
 
-          <line x1="360" y1="28" x2="360" y2="200" stroke="#d8ccba" stroke-width="1.4"/>
+          <line x1="360" y1="28" x2="360" y2="176" stroke="#d8ccba" stroke-width="1.4"/>
 
-          <text x="540" y="20" class="s" font-size="14" font-weight="700" fill="#3c6440" text-anchor="middle">Effect: same type either way</text>
-          <g class="m" font-size="12">
-            <rect x="420" y="34" width="240" height="36" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.3"/>
-            <text x="540" y="57" fill="#3c6440" font-weight="600" text-anchor="middle">greet → Effect&lt;string&gt;</text>
-            <rect x="420" y="78" width="240" height="36" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.3"/>
-            <text x="540" y="101" fill="#3c6440" font-weight="600" text-anchor="middle">service → Effect&lt;string&gt;</text>
-            <rect x="420" y="122" width="240" height="36" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.3"/>
-            <text x="540" y="145" fill="#3c6440" font-weight="600" text-anchor="middle">loadName → Effect&lt;string&gt;</text>
+          <text x="550" y="20" class="s" font-size="13.5" font-weight="700" fill="#3c6440" text-anchor="middle">Effect — the change stays put</text>
+          <g class="m" font-size="12.5">
+            <rect x="430" y="32" width="240" height="34" rx="8" fill="#fff" stroke="#d8ccba" stroke-width="1.3"/>
+            <text x="550" y="53" text-anchor="middle"><tspan fill="#4a3f37">caller()</tspan><tspan fill="#9a9081">  unchanged</tspan></text>
+            <rect x="430" y="84" width="240" height="34" rx="8" fill="#fff" stroke="#d8ccba" stroke-width="1.3"/>
+            <text x="550" y="105" text-anchor="middle"><tspan fill="#4a3f37">greet()</tspan><tspan fill="#9a9081">  unchanged</tspan></text>
+            <rect x="430" y="136" width="240" height="34" rx="8" fill="#eef3ea" stroke="#4f7a52" stroke-width="1.8"/>
+            <text x="550" y="157" text-anchor="middle"><tspan fill="#4a3f37">loadName()</tspan><tspan fill="#3c6440" font-weight="700">  sync → async</tspan></text>
           </g>
-          <text x="540" y="182" class="s" font-size="12" fill="#5c6b58" font-style="italic" text-anchor="middle">swap sync for async at the bottom, nothing above moves</text>
+          <text x="550" y="192" class="s" font-size="12" fill="#5c6b58" font-style="italic" text-anchor="middle">same type above, so nothing above moves</text>
           <defs><marker id="up" markerWidth="9" markerHeight="9" refX="4" refY="2" orient="auto"><path d="M0 6 L4 0 L8 6 z" fill="#b14d3c"/></marker></defs>
         </svg>
       </div>
-      <figcaption><code>Effect&lt;string&gt;</code> is the same type whether the work is sync or async, so the "async" decision never spreads.</figcaption>
+      <figcaption>Both columns make the same change — <code>loadName</code> goes from sync to async. On the left it forces every caller above to change; on the right, because the type stays <code>Effect&lt;string&gt;</code>, nothing above moves.</figcaption>
     </figure>
 
-    <p>Because the type doesn't carry the announcement, <code>greet</code> is written once and runs
-      unchanged whether you hand it a sync step or an async one:</p>
+    <p>Effect's type doesn't change between sync and async — <code>Effect&lt;string&gt;</code> is the
+      same type either way. So <code>greet</code> is written once and never mentions sync or async:</p>
 
-    <pre><code class="language-typescript">const loadNameSync  = (id: string) =&gt; Effect.sync(() =&gt; `user-${id}`)
-const loadNameAsync = (id: string) =&gt; Effect.promise(() =&gt; Promise.resolve(`user-${id}`))
+    <pre><code class="language-typescript">const greet = (id: string): Effect.Effect&lt;string&gt; =&gt;
+  Effect.gen(function* () {
+    const name = yield* loadName(id)
+    return `hello, ${name}`
+  })
 
-greet(loadNameSync)("1")   // works
-greet(loadNameAsync)("1")  // SAME greet, also works — no await ladder</code></pre>
+// switch loadName's body between these two — greet's type is
+// unchanged, and so is every caller above it:
+const loadName = (id: string) =&gt; Effect.sync(() =&gt; db.get(id))         // sync
+const loadName = (id: string) =&gt; Effect.promise(() =&gt; db.getAsync(id)) // async</code></pre>
 
-    <p>The "sync vs async" choice is no longer in the type, so it doesn't spread. It's handled at
+    <p>The "sync vs async" choice is no longer in the type, so it doesn't spread. It's settled at
       runtime, when the program actually runs — which is exactly what Part 2 explains.</p>
 
     <h2>What's actually going on</h2>
@@ -356,10 +432,11 @@ greet(loadNameAsync)("1")  // SAME greet, also works — no await ladder</code><
 <footer class="site-footer">
   <div class="inner">
     <span>The Comprehensive Guide to Effect</span>
+    <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
     <span class="sp"></span>
-    <a href="index.html">Home</a>
-    <a href="part-2.html">Part 2</a>
-    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="love">Made with <span class="heart">♥</span> by Obada Khalili</span>
   </div>
 </footer>
 

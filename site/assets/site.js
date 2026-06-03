@@ -9,7 +9,32 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
   document.querySelectorAll("[data-stepper]").forEach(initStepper);
+  document.querySelectorAll(".toc[data-toc]").forEach(buildToc);
 });
+
+// ---- "on this page" table of contents, built from the h2s ----
+function buildToc(toc) {
+  const headings = [...document.querySelectorAll("main h2")];
+  if (headings.length < 2) { toc.remove(); return; }
+  const title = document.createElement("div");
+  title.className = "toc-title";
+  title.textContent = "On this page";
+  const ol = document.createElement("ol");
+  headings.forEach((h) => {
+    if (!h.id) {
+      h.id = h.textContent.toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+    const a = document.createElement("a");
+    a.href = "#" + h.id;
+    a.textContent = h.textContent;
+    const li = document.createElement("li");
+    li.appendChild(a);
+    ol.appendChild(li);
+  });
+  toc.appendChild(title);
+  toc.appendChild(ol);
+}
 
 // ---- interactive interpreter stepper ----
 // expects a <script type="application/json"> inside the [data-stepper] element

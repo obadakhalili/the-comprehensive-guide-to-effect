@@ -20,6 +20,9 @@
 <meta name="twitter:image" content="https://effect-guide.netlify.app/og-image.png" />
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#c0552b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -49,6 +52,7 @@
     <nav class="nav">
       <a href="part-1.html">Part 1 · What is Effect</a>
       <a href="part-2.html">Part 2 · Under the hood</a>
+      <a class="hide-sm" href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="hide-sm" href="https://effect.website" target="_blank" rel="noopener">effect.website ↗</a>
     </nav>
   </div>
@@ -85,7 +89,7 @@
         <rect x="306" y="22" width="74" height="6" rx="3" fill="#dca049"/>
         <text x="343" y="57" class="mono" font-size="26" font-weight="700" fill="#a9772a" text-anchor="middle">R</text>
         <text x="343" y="92" class="sans" font-size="12.5" fill="#756a5d" text-anchor="middle">needs</text>
-        <text x="381" y="58" class="mono" font-size="34" font-weight="700" fill="#2b2420">&gt;</text>
+        <text x="380" y="58" class="mono" font-size="34" font-weight="700" fill="#2b2420">&gt;</text>
         <text x="0" y="128" class="sans" font-size="13.5" fill="#756a5d">One type carries all three: what you get, how it fails, what it needs to run.</text>
       </svg>
     </div>
@@ -96,18 +100,19 @@
   <div class="wrap reading">
 
     <h2>What this is</h2>
-    <p>Most guides show you how to <em>use</em> a tool. This one also shows you <em>why it exists</em>
-      and <em>how it actually works</em> — concretely, down to the loop that runs your code.</p>
-    <p>It comes in two parts. Read them in order; the second only lands once the first has shown you
-      what problem we're solving.</p>
+    <p>Contrary to most sources, this guide focuses less on how to <em>use</em> Effect and more on
+      <em>why it exists</em> and <em>how it works under the hood</em> — down to the loop that runs your
+      code.</p>
+    <p>It comes in two parts. Ideally read them in order.</p>
 
     <div class="grid-cards">
       <a class="part-card" href="part-1.html">
         <span class="num">PART 1</span>
         <h3>What is Effect</h3>
         <p>The <em>why</em>. One small program — a web handler reading a user from a database —
-          written twice, plain and with Effect, to show the three problems Effect fixes: invisible
-          errors, threaded dependencies, and async coloring.</p>
+          written twice, plain and with Effect. It walks through three things that get better:
+          invisible errors, threaded dependencies, and async coloring — all of which follow from one
+          idea.</p>
         <span class="go">Read Part 1 <span class="arr">→</span></span>
       </a>
       <a class="part-card" href="part-2.html">
@@ -185,22 +190,17 @@ const divide = (a: number, b: number): Effect.Effect&lt;number, Error&gt; =&gt;
       </div>
     </div>
 
-    <p class="center"><a class="part-card" style="display:inline-block;text-align:left;max-width:520px;margin-top:1em" href="part-1.html">
-      <span class="num">START HERE</span>
-      <h3 style="margin-bottom:.2em">Part 1 — What is Effect →</h3>
-      <p>See the three problems on a real-shaped program, not a one-liner.</p>
-    </a></p>
-
   </div>
 </main>
 
 <footer class="site-footer">
   <div class="inner">
     <span>The Comprehensive Guide to Effect</span>
+    <a href="https://github.com/obadakhalili/the-comprehensive-guide-to-effect" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://effect.website" target="_blank" rel="noopener">Effect website ↗</a>
+    <a href="https://effect.website/docs/getting-started/introduction/" target="_blank" rel="noopener">Effect docs ↗</a>
     <span class="sp"></span>
-    <a href="part-1.html">Part 1</a>
-    <a href="part-2.html">Part 2</a>
-    <a href="https://effect.website" target="_blank" rel="noopener">Effect docs ↗</a>
+    <span class="love">Made with <span class="heart">♥</span> by Obada Khalili</span>
   </div>
 </footer>
 
