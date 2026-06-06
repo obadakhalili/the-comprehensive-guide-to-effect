@@ -216,11 +216,9 @@ const getProfile = (
       compiling. The plain <code>catch</code> can't do that: <code>err</code> is <code>unknown</code>,
       and nothing forces the list to be complete. Add a new error three layers down and it still
       compiles, silently becoming a 500.</p>
-    <p>(The check comes from declaring "no errors left", not from <code>catchTags</code> by itself —
       we come back to exactly this point in <a href="part-2-7.html">2.7</a>.)</p>
 
-    <p class="takeaway">Each layer is written for the success case. Failures are handled once, at the
-      edge, and the compiler checks that every case is covered.</p>
+    <p class="takeaway">When reading Effect code, you feel comfortable acting as though your code never fails, because you know all failures are tracked and accounted for at the edge, which is an amazing feeling to have when programming!</p>
 
     <h2>Problem 2 · Dependencies get threaded everywhere</h2>
     <p>The repository needs a database client. <em>Only</em> the repository uses it. But in plain code
